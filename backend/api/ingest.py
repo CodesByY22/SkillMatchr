@@ -16,7 +16,7 @@ ALLOWED_TYPES = {
 }
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
-BATCH_SEMAPHORE = asyncio.Semaphore(5)
+BATCH_SEMAPHORE = asyncio.Semaphore(2)
 
 @router.post("/upload", response_model=UploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_resume(
@@ -161,17 +161,22 @@ async def upload_batch(
             detail="No files provided",
         )
 
-    if len(files) > 20:
+    if len(files) > 50:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Maximum 20 files per batch",
+            detail="Maximum 50 files per batch",
         )
 
     user_id = str(current_user.id)
 
-    results = await asyncio.gather(
-        *[_process_single_file(f, user_id) for f in files]
-    )
+    # Process files sequentially with a small stagger delay
+    # to avoid LLM rate limiting (Gemini/Groq)
+    results = []
+    for i, f in enumerate(files):
+        if i > 0:
+            await asyncio.sleep(1.5)  # stagger to avoid rate limits
+        result = await _process_single_file(f, user_id)
+        results.append(result)
 
     succeeded = sum(1 for r in results if r.status == "success")
 

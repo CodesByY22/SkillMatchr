@@ -193,7 +193,7 @@ export default function SettingsPage() {
               <p className="text-center text-xs text-slate-500 truncate">{user?.email}</p>
               <div className="flex justify-center mt-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 border border-indigo-100">
-                  {user?.role || 'HR'}
+                  {user?.role === 'hr' ? 'Recruiter' : (user?.role || 'Recruiter')}
                 </span>
               </div>
             </div>
@@ -252,7 +252,7 @@ export default function SettingsPage() {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">Role</label>
                   <input
-                    type="text" value={user?.role || 'hr'} readOnly
+                    type="text" value={user?.role === 'hr' ? 'recruiter' : (user?.role || 'recruiter')} readOnly
                     className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-sm text-slate-500 cursor-not-allowed capitalize"
                   />
                 </div>

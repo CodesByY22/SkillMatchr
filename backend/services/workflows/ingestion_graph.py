@@ -9,8 +9,8 @@ from langgraph.graph import StateGraph, END
 logger = logging.getLogger(__name__)
 
 from backend.services.parsing.extractor import extract_text, ExtractionError
-from backend.services.parsing.gemini_parser import parse_resume, parse_linkedin_resume
-from backend.services.parsing.embedding import generate_embedding
+from backend.services.parsing.gemini_parser import parse_resume_async, parse_linkedin_resume_async, ParsedResume
+from backend.services.parsing.embedding import generate_embedding_async
 from backend.services.dedup.engine import run_dedup_check, DedupClassification
 from backend.services.dedup.merger import merge_candidates
 from backend.models.candidate import Candidate
@@ -43,56 +43,103 @@ class IngestionState(TypedDict, total=False):
 # ── Node functions ────────────────────────────────────────────────
 
 
-def extract_text_node(state: IngestionState) -> dict:
-    """Extract raw text from the uploaded file.
-
-    Skips extraction if raw_text is already provided (e.g., HRMS pre-structured data).
-    """
+async def extract_text_node(state: IngestionState) -> dict:
+    """Extract raw text from the uploaded file."""
     if state.get("raw_text"):
-        logger.info("extract_text_node: raw_text already present, skipping extraction")
         return {"status": "text_extracted"}
+    
+    import asyncio
+    import time
+    start_time = time.time()
+    loop = asyncio.get_running_loop()
     try:
-        raw_text = extract_text(state["file_bytes"], state["filename"])
-        logger.info("extract_text_node: extracted %d chars from %s", len(raw_text), state.get("filename"))
+        # Run sync extractor in thread pool
+        raw_text = await loop.run_in_executor(None, extract_text, state["file_bytes"], state["filename"])
+        duration = time.time() - start_time
+        logger.info("extract_text_node SUCCESS: extracted %d chars from '%s' in %.2fs", len(raw_text), state["filename"], duration)
         return {"raw_text": raw_text, "status": "text_extracted"}
-    except ExtractionError as e:
-        logger.error("extract_text_node FAILED: %s", e)
+    except Exception as e:
+        logger.error("extract_text_node FAILED for '%s': %s", state["filename"], e)
         return {"status": "needs_review", "error": str(e)}
 
 
-def parse_with_gemini_node(state: IngestionState) -> dict:
-    """Call Gemini to extract structured resume data.
-
-    Uses a LinkedIn-specific prompt when source is 'linkedin',
-    otherwise falls back to the generic resume parser.
+async def parse_and_embed_node(state: IngestionState) -> dict:
+    """Call Gemini to extract structured data AND generate embeddings in parallel.
+    
+    This is the main speed optimization: running LLM and Embedding tasks concurrently.
+    A hard 45-second timeout is applied to prevent infinite hangs if APIs are degraded.
     """
     if state.get("status") == "needs_review":
-        logger.warning("parse_with_gemini_node: skipping — already needs_review")
         return {}
-    try:
-        raw_text = state.get("raw_text", "")
-        logger.info("parse_with_gemini_node: parsing %d chars, source=%s", len(raw_text), state.get("source"))
-        if state.get("source") == "linkedin":
-            parsed = parse_linkedin_resume(raw_text)
-        else:
-            parsed = parse_resume(raw_text)
-        logger.info("parse_with_gemini_node: SUCCESS — name=%s, skills=%s", parsed.full_name, parsed.skills)
-        return {"parsed_data": parsed.model_dump(), "status": "parsed"}
-    except Exception as e:
-        logger.error("parse_with_gemini_node FAILED: %s", e, exc_info=True)
-        return {"status": "needs_review", "error": f"Gemini parsing failed: {e}"}
 
+    raw_text = state.get("raw_text", "")
+    if not raw_text:
+        return {"status": "needs_review", "error": "No text extracted"}
 
-def generate_embedding_node(state: IngestionState) -> dict:
-    """Generate a 768-dim embedding from the resume text."""
-    if state.get("status") == "needs_review":
-        return {}
+    import asyncio
+    import time
+    
+    # 1. Parsing Task
+    async def _parse():
+        try:
+            if state.get("source") == "linkedin":
+                return await parse_linkedin_resume_async(raw_text)
+            return await parse_resume_async(raw_text)
+        except Exception as e:
+            logger.error("Parsing failed for %s: %s", state.get("filename"), e)
+            return None
+
+    # 2. Embedding Task (uses first 3000 chars for quality/speed balance)
+    async def _embed():
+        try:
+            return await generate_embedding_async(raw_text[:3000])
+        except Exception as e:
+            logger.error("Embedding failed for %s: %s", state.get("filename"), e)
+            return None
+
+    logger.info("Starting parallel Parse & Embed for %s", state.get("filename"))
+    start_time = time.time()
+    
     try:
-        text_for_embedding = _build_embedding_text(state)
-        embedding = generate_embedding(text_for_embedding)
-        return {"embedding": embedding, "status": "embedded"}
-    except Exception as e:
-        return {"status": "needs_review", "error": f"Embedding generation failed: {e}"}
+        # Hard 45s timeout to prevent infinite hanging if both LLM providers are degraded
+        # Use simple gather but enforce the timeout externally
+        parsed, embedding = await asyncio.wait_for(
+            asyncio.gather(_parse(), _embed(), return_exceptions=True),
+            timeout=90.0
+        )
+        duration = time.time() - start_time
+        
+        # Handle exceptions from gather
+        if isinstance(parsed, Exception):
+            logger.error("Parse exception for %s: %s", state.get("filename"), parsed)
+            parsed = None
+        if isinstance(embedding, Exception):
+            logger.error("Embed exception for %s: %s", state.get("filename"), embedding)
+            embedding = None
+
+        logger.info("parse_and_embed_node DONE for %s in %.2fs. Parsed: %s, Embedding: %s", 
+                    state.get("filename"), duration, "YES" if parsed else "NO", "YES" if embedding else "NO")
+
+    except asyncio.TimeoutError:
+        logger.error("parse_and_embed_node TIMED OUT after 90s for %s", state.get("filename"))
+        return {"status": "needs_review", "error": "Parsing timed out after 90s — LLM APIs may be unavailable"}
+
+    updates = {}
+    if parsed:
+        updates["parsed_data"] = parsed.model_dump()
+        updates["status"] = "parsed"
+    else:
+        # Keep empty dict if None
+        updates["parsed_data"] = {}
+        updates["status"] = "needs_review"
+        updates["error"] = "Gemini & Groq parsing both failed"
+
+    if embedding:
+        updates["embedding"] = embedding
+        if updates.get("status") == "parsed":
+            updates["status"] = "ready_for_dedup"
+
+    return updates
 
 
 async def run_dedup_check_node(state: IngestionState) -> dict:
@@ -103,6 +150,8 @@ async def run_dedup_check_node(state: IngestionState) -> dict:
     parsed_data = state.get("parsed_data", {})
     embedding = state.get("embedding")
 
+    import time
+    start_time = time.time()
     async with AsyncSessionLocal() as session:
         result = await run_dedup_check(
             session=session,
@@ -110,6 +159,9 @@ async def run_dedup_check_node(state: IngestionState) -> dict:
             embedding=embedding,
             user_id=state.get("user_id"),
         )
+    duration = time.time() - start_time
+    logger.info("run_dedup_check_node DONE for %s in %.2fs. Classification: %s", 
+                state.get("filename"), duration, result.classification.value)
 
     return {
         "dedup_classification": result.classification.value,
@@ -175,6 +227,13 @@ async def save_to_db_node(state: IngestionState) -> dict:
         resolved_name = parsed.get("full_name")
         if not resolved_name or resolved_name == "Unknown":
             resolved_name = fallback_name
+        
+        # Ensure we have a summary to show in the UI if parsing failed
+        fallback_summary = state.get("error") or "No structured data could be extracted from this document."
+        if is_failed and not parsed.get("summary"):
+            summary_val = f"Extraction failed: {fallback_summary}"
+        else:
+            summary_val = parsed.get("summary")
             
         candidate = Candidate(
             full_name=resolved_name,
@@ -190,7 +249,7 @@ async def save_to_db_node(state: IngestionState) -> dict:
             certifications=[c for c in parsed.get("certifications", [])],
             projects=[p for p in parsed.get("projects", [])],
             publications=[p for p in parsed.get("publications", [])],
-            summary=parsed.get("summary"),
+            summary=summary_val,
             raw_text=state.get("raw_text"),
             embedding=state.get("embedding"),
             source=state.get("source", "resume_upload"),
@@ -244,14 +303,10 @@ def _route_or_save(state: IngestionState, next_node: str) -> str:
 
 
 def route_after_extract(state: IngestionState) -> str:
-    return _route_or_save(state, "parse_with_gemini")
+    return _route_or_save(state, "parse_and_embed")
 
 
-def route_after_parse(state: IngestionState) -> str:
-    return _route_or_save(state, "generate_embedding")
-
-
-def route_after_embedding(state: IngestionState) -> str:
+def route_after_parse_embed(state: IngestionState) -> str:
     return _route_or_save(state, "run_dedup_check")
 
 
@@ -266,8 +321,7 @@ def build_ingestion_graph() -> StateGraph:
     graph = StateGraph(IngestionState)
 
     graph.add_node("extract_text", extract_text_node)
-    graph.add_node("parse_with_gemini", parse_with_gemini_node)
-    graph.add_node("generate_embedding", generate_embedding_node)
+    graph.add_node("parse_and_embed", parse_and_embed_node)
     graph.add_node("run_dedup_check", run_dedup_check_node)
     graph.add_node("save_to_db", save_to_db_node)
 
@@ -275,16 +329,11 @@ def build_ingestion_graph() -> StateGraph:
     graph.add_conditional_edges(
         "extract_text",
         route_after_extract,
-        {"parse_with_gemini": "parse_with_gemini", "save_to_db": "save_to_db"},
+        {"parse_and_embed": "parse_and_embed", "save_to_db": "save_to_db"},
     )
     graph.add_conditional_edges(
-        "parse_with_gemini",
-        route_after_parse,
-        {"generate_embedding": "generate_embedding", "save_to_db": "save_to_db"},
-    )
-    graph.add_conditional_edges(
-        "generate_embedding",
-        route_after_embedding,
+        "parse_and_embed",
+        route_after_parse_embed,
         {"run_dedup_check": "run_dedup_check", "save_to_db": "save_to_db"},
     )
     graph.add_edge("run_dedup_check", "save_to_db")

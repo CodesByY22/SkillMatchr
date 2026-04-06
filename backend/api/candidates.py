@@ -115,6 +115,9 @@ async def get_candidate(
         skills=candidate.skills,
         education=candidate.education,
         experience=candidate.experience,
+        certifications=candidate.certifications,
+        projects=candidate.projects,
+        publications=candidate.publications,
         summary=candidate.summary,
         raw_text=candidate.raw_text,
         source=candidate.source,
@@ -234,6 +237,9 @@ async def update_candidate(
         skills=candidate.skills,
         education=candidate.education,
         experience=candidate.experience,
+        certifications=candidate.certifications,
+        projects=candidate.projects,
+        publications=candidate.publications,
         summary=candidate.summary,
         raw_text=candidate.raw_text,
         source=candidate.source,
@@ -282,3 +288,119 @@ async def delete_candidate(
 
     await db.delete(candidate)
     await db.commit()
+
+
+@router.post("/{candidate_id}/reparse", response_model=CandidateDetail)
+async def reparse_candidate(
+    candidate_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Re-run AI parsing on a candidate's stored raw text.
+
+    Useful when the initial parse failed (e.g., rate limiting).
+    Requires that raw_text was saved from the original upload.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    result = await db.execute(
+        select(Candidate)
+        .where(Candidate.id == candidate_id)
+        .where(Candidate.created_by == current_user.id)
+    )
+    candidate = result.scalar_one_or_none()
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+
+    if not candidate.raw_text:
+        raise HTTPException(
+            status_code=400,
+            detail="No raw text stored — cannot re-parse. Try re-uploading the resume.",
+        )
+
+    # Re-run parser
+    from backend.services.parsing.gemini_parser import parse_resume_async
+    from backend.services.parsing.embedding import generate_embedding_async
+
+    try:
+        parsed = await parse_resume_async(candidate.raw_text)
+    except Exception as e:
+        logger.error("Re-parse failed for %s: %s", candidate_id, e)
+        raise HTTPException(
+            status_code=502,
+            detail=f"AI parsing failed again: {str(e)[:200]}. Try again in a moment.",
+        )
+
+    # Update candidate fields from parsed data
+    if parsed.full_name and parsed.full_name != "Unknown":
+        candidate.full_name = parsed.full_name
+    if parsed.email:
+        candidate.email = parsed.email
+    if parsed.phone:
+        candidate.phone = parsed.phone
+    if parsed.location:
+        candidate.location = parsed.location
+    if parsed.linkedin_url:
+        candidate.linkedin_url = parsed.linkedin_url
+    if parsed.current_title:
+        candidate.current_title = parsed.current_title
+    if parsed.years_experience is not None:
+        candidate.years_experience = parsed.years_experience
+    if parsed.summary:
+        candidate.summary = parsed.summary
+    if parsed.skills:
+        candidate.skills = parsed.skills
+    if parsed.education:
+        candidate.education = [e.model_dump() for e in parsed.education]
+    if parsed.experience:
+        candidate.experience = [e.model_dump() for e in parsed.experience]
+    if parsed.certifications:
+        candidate.certifications = [c.model_dump() for c in parsed.certifications]
+    if parsed.projects:
+        candidate.projects = [p.model_dump() for p in parsed.projects]
+    if parsed.publications:
+        candidate.publications = [p.model_dump() for p in parsed.publications]
+    if parsed.confidence_score is not None:
+        candidate.confidence_score = parsed.confidence_score
+
+    candidate.ingestion_status = "completed"
+    candidate.ingestion_error = None
+
+    # Re-generate embedding
+    try:
+        embedding = await generate_embedding_async(candidate.raw_text)
+        if embedding:
+            candidate.embedding = embedding
+    except Exception as e:
+        logger.warning("Embedding failed during re-parse: %s", e)
+
+    await db.commit()
+    await db.refresh(candidate)
+
+    return CandidateDetail(
+        id=candidate.id,
+        full_name=candidate.full_name,
+        email=candidate.email,
+        phone=candidate.phone,
+        location=candidate.location,
+        current_title=candidate.current_title,
+        years_experience=candidate.years_experience,
+        linkedin_url=candidate.linkedin_url,
+        skills=candidate.skills,
+        education=candidate.education,
+        experience=candidate.experience,
+        certifications=candidate.certifications,
+        projects=candidate.projects,
+        publications=candidate.publications,
+        summary=candidate.summary,
+        raw_text=candidate.raw_text,
+        source=candidate.source,
+        source_ref=candidate.source_ref,
+        ingestion_status=candidate.ingestion_status,
+        ingestion_error=candidate.ingestion_error,
+        confidence_score=candidate.confidence_score,
+        created_at=candidate.created_at,
+        updated_at=candidate.updated_at,
+    )
+

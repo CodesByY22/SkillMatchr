@@ -48,7 +48,6 @@ app = FastAPI(
     ],
 )
 
-import os
 
 # Support comma-separated CORS origins (e.g. "https://app.vercel.app,https://custom-domain.com")
 _raw_origins = os.environ.get("CORS_ORIGIN", "")

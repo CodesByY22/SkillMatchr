@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import TopNav from './components/TopNav';
 import Login from './pages/Login';
-import HRDashboard from './pages/HRDashboard';
+import RecruiterDashboard from './pages/HRDashboard';
 import CandidatesPage from './pages/CandidatesPage';
 import IngestPage from './pages/IngestPage';
 import JobsPage from './pages/JobsPage';
@@ -44,7 +44,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/login/callback" element={<GoogleCallback />} />
-          <Route path="/dashboard" element={<ProtectedRoute><HRDashboard /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><RecruiterDashboard /></ProtectedRoute>} />
           <Route path="/candidates" element={<ProtectedRoute><CandidatesPage /></ProtectedRoute>} />
           <Route path="/ingest" element={<ProtectedRoute><IngestPage /></ProtectedRoute>} />
           <Route path="/jobs" element={<ProtectedRoute><JobsPage /></ProtectedRoute>} />

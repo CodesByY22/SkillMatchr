@@ -18,7 +18,7 @@ from typing import Any
 
 from backend.services.orchestrator.agent_orchestrator import orchestrator, PipelineRun
 from backend.services.parsing.extractor import extract_text, ExtractionError
-from backend.services.parsing.gemini_parser import parse_resume, parse_linkedin_resume
+from backend.services.parsing.gemini_parser import parse_resume_async, parse_linkedin_resume_async
 from backend.services.parsing.embedding import generate_embedding
 from backend.services.skills.normalization_agent import normalization_graph
 from backend.services.dedup.engine import run_dedup_check, DedupClassification
@@ -42,13 +42,13 @@ def _extract_text_agent(state: dict) -> dict:
     return {"raw_text": raw_text, "status": "text_extracted"}
 
 
-def _parse_resume_agent(state: dict) -> dict:
+async def _parse_resume_agent(state: dict) -> dict:
     """Agent 2: LLM-powered structured extraction."""
     raw_text = state.get("raw_text", "")
     if state.get("source") == "linkedin":
-        parsed = parse_linkedin_resume(raw_text)
+        parsed = await parse_linkedin_resume_async(raw_text)
     else:
-        parsed = parse_resume(raw_text)
+        parsed = await parse_resume_async(raw_text)
     return {"parsed_data": parsed.model_dump(), "status": "parsed"}
 
 

@@ -16,7 +16,7 @@ class User(Base, UUIDPrimaryKey, TimestampMixin):
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     auth_provider: Mapped[str] = mapped_column(String(50), nullable=False, default="native")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    role: Mapped[str] = mapped_column(String(50), default="hr", nullable=False, server_default="hr")
+    role: Mapped[str] = mapped_column(String(50), default="recruiter", nullable=False, server_default="recruiter")
 
     # Google OAuth tokens (for Gmail API access)
     google_access_token: Mapped[str | None] = mapped_column(Text, nullable=True)

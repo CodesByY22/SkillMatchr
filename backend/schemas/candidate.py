@@ -24,6 +24,9 @@ class CandidateDetail(CandidateListItem):
     skills: list | None = None
     education: list | None = None
     experience: list | None = None
+    certifications: list | None = None
+    projects: list | None = None
+    publications: list | None = None
     summary: str | None = None
     raw_text: str | None = None
     source_ref: str | None = None

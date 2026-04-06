@@ -131,7 +131,7 @@ export default function CandidatesPage() {
   const [candidates, setCandidates] = useState([]);
   const [total, setTotal]           = useState(0);
   const [page, setPage]             = useState(0);
-  const limit                       = 15;
+  const [limit, setLimit]           = useState(25);
 
   const [searchQuery, setSearchQuery]       = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -175,7 +175,7 @@ export default function CandidatesPage() {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  useEffect(() => { fetchCandidates(); }, [page, debouncedQuery, statusFilter, minExp]);
+  useEffect(() => { fetchCandidates(); }, [page, debouncedQuery, statusFilter, minExp, limit]);
 
   useEffect(() => { fetchShortlists(); }, []);
 
@@ -219,23 +219,36 @@ export default function CandidatesPage() {
     setSimilarCandidates([]);
     setActiveTab('overview');
     try {
-      const [candidateRes, analysisRes] = await Promise.allSettled([
-        api.get(`/api/candidates/${id}`),
-        api.get(`/api/candidates/${id}/analysis`),
-      ]);
-      if (candidateRes.status === 'fulfilled') setSelectedCandidate(candidateRes.value.data);
-      if (analysisRes.status === 'fulfilled')  setCandidateAnalysis(analysisRes.value.data);
+      // Load candidate data first — show modal immediately
+      const candidateRes = await api.get(`/api/candidates/${id}`);
+      setSelectedCandidate(candidateRes.data);
+      setDetailLoading(false);
 
-      // fetch similar in background
+      // Lazy-load analysis and similar in background (non-blocking)
+      api.get(`/api/candidates/${id}/analysis`).then(r => setCandidateAnalysis(r.data)).catch(() => {});
       api.get(`/api/candidates/${id}/similar?limit=4`).then(r => setSimilarCandidates(r.data?.results || [])).catch(() => {});
     } catch {
       setError('Failed to load candidate details.');
-    } finally {
       setDetailLoading(false);
     }
   };
 
   const closeModal = () => { setSelectedCandidate(null); setCandidateAnalysis(null); setSimilarCandidates([]); };
+
+  const [reparsing, setReparsing] = useState(false);
+  const reparseCandidate = async (id) => {
+    setReparsing(true);
+    try {
+      const res = await api.post(`/api/candidates/${id}/reparse`);
+      setSelectedCandidate(res.data);
+      showToast('Re-parsed successfully!');
+      fetchCandidates(); // refresh list to update status
+    } catch (err) {
+      showToast(err.response?.data?.detail || 'Re-parse failed. Try again later.', 'error');
+    } finally {
+      setReparsing(false);
+    }
+  };
 
   const deleteCandidate = async (id) => {
     if (!confirm('Permanently delete this candidate?')) return;
@@ -502,9 +515,20 @@ export default function CandidatesPage() {
           {/* Pagination */}
           {!loading && candidates.length > 0 && (
             <div className="flex items-center justify-between px-5 py-3.5 border-t border-slate-100 bg-slate-50/50">
-              <span className="text-xs text-slate-500 font-medium">
-                Showing <span className="font-bold text-slate-700">{page * limit + 1}</span>–<span className="font-bold text-slate-700">{Math.min((page + 1) * limit, total)}</span> of <span className="font-bold text-slate-700">{total.toLocaleString()}</span>
-              </span>
+              <div className="flex items-center gap-4">
+                <span className="text-xs text-slate-500 font-medium">
+                  Showing <span className="font-bold text-slate-700">{page * limit + 1}</span>–<span className="font-bold text-slate-700">{Math.min((page + 1) * limit, total)}</span> of <span className="font-bold text-slate-700">{total.toLocaleString()}</span>
+                </span>
+                <select
+                  value={limit}
+                  onChange={e => { setLimit(Number(e.target.value)); setPage(0); }}
+                  className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5 font-medium text-slate-600 cursor-pointer outline-none focus:border-indigo-400"
+                >
+                  <option value={25}>25 / page</option>
+                  <option value={50}>50 / page</option>
+                  <option value={100}>100 / page</option>
+                </select>
+              </div>
               <div className="flex gap-2">
                 <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
                   className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-white rounded-lg border border-slate-200 hover:bg-slate-50 hover:text-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm">
@@ -586,6 +610,15 @@ export default function CandidatesPage() {
                 <ChevronLeft className="w-4 h-4" /> Prev
               </button>
               <span className="text-sm text-slate-500 font-medium">Page {page + 1} of {totalPages || 1}</span>
+              <select
+                value={limit}
+                onChange={e => { setLimit(Number(e.target.value)); setPage(0); }}
+                className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5 font-medium text-slate-600 cursor-pointer outline-none focus:border-indigo-400"
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
               <button onClick={() => setPage(p => p + 1)} disabled={page >= totalPages - 1}
                 className="flex items-center gap-1 px-4 py-2 text-sm font-semibold bg-white rounded-xl border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm">
                 Next <ChevronRight className="w-4 h-4" />
@@ -614,7 +647,7 @@ export default function CandidatesPage() {
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               onClick={e => e.stopPropagation()}
               ref={modalRef}
-              className="w-full max-w-5xl bg-white shadow-2xl rounded-2xl flex flex-col max-h-full overflow-hidden"
+              className="w-full max-w-6xl bg-white shadow-2xl rounded-2xl flex flex-col min-h-[90vh] max-h-[95vh] overflow-hidden"
             >
               {detailLoading ? (
                 <div className="flex-1 flex items-center justify-center py-32">
@@ -627,7 +660,7 @@ export default function CandidatesPage() {
                 <>
                   {/* Modal Header */}
                   <div className="relative p-6 pb-4 border-b border-slate-100 shrink-0">
-                    <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${avatarGradient(selectedCandidate.full_name)} rounded-t-2xl`} />
+                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 rounded-t-2xl" />
                     <div className="flex items-start justify-between mt-1">
                       <div className="flex items-center gap-4">
                         <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${avatarGradient(selectedCandidate.full_name)} flex items-center justify-center text-white text-xl font-bold shadow-lg`}>
@@ -702,12 +735,23 @@ export default function CandidatesPage() {
                         {activeTab === 'overview' && (
                           <>
                             {(!selectedCandidate.summary && (!selectedCandidate.education || selectedCandidate.education.length === 0) && (!selectedCandidate.skills || selectedCandidate.skills.length === 0) && (!selectedCandidate.certifications || selectedCandidate.certifications.length === 0) && (!selectedCandidate.projects || selectedCandidate.projects.length === 0) && (!selectedCandidate.publications || selectedCandidate.publications.length === 0)) && (
-                              <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl shadow-sm border border-slate-200">
+                              <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl shadow-sm border border-slate-200">
                                 <FileText className="w-12 h-12 text-slate-300 mb-3" />
                                 <h4 className="text-lg font-bold text-slate-700">No Profile Data Extracted</h4>
                                 <p className="text-slate-500 text-sm mt-1 max-w-sm mx-auto">
-                                  We could not extract any structured information. The original document might be unreadable, password-protected, or image-based.
+                                  AI parsing may have failed due to rate limiting. You can retry without re-uploading.
                                 </p>
+                                <button
+                                  onClick={() => reparseCandidate(selectedCandidate.id)}
+                                  disabled={reparsing}
+                                  className="mt-5 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold rounded-xl shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all text-sm disabled:opacity-60"
+                                >
+                                  {reparsing ? (
+                                    <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Re-parsing…</>
+                                  ) : (
+                                    <><RefreshCw className="w-4 h-4" /> Retry AI Parsing</>
+                                  )}
+                                </button>
                               </div>
                             )}
                             {selectedCandidate.summary && (

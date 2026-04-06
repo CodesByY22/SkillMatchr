@@ -1,5 +1,5 @@
+import asyncio
 import logging
-import time
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
@@ -21,7 +21,7 @@ def _get_gemini_llm() -> ChatGoogleGenerativeAI:
             google_api_key=settings.GEMINI_API_KEY,
             temperature=0,
             max_retries=1,
-            timeout=30,
+            timeout=45,
         )
     return _gemini_llm
 
@@ -34,7 +34,7 @@ def _get_groq_llm() -> ChatGroq:
             model="llama-3.3-70b-versatile",
             api_key=settings.GROQ_API_KEY,
             temperature=0,
-            max_retries=2,
+            max_retries=1,
             timeout=30,
         )
     return _groq_llm
@@ -99,43 +99,86 @@ _LINKEDIN_SYSTEM_PROMPT = (
 )
 
 
-from tenacity import retry, wait_exponential, stop_after_attempt
-
-@retry(wait=wait_exponential(multiplier=1.5, min=2, max=60), stop=stop_after_attempt(8))
-def _invoke_gemini(prompt: str) -> ParsedResume:
-    llm = _get_gemini_llm()
-    structured = llm.with_structured_output(ParsedResume)
-    return structured.invoke(prompt)
-
-@retry(wait=wait_exponential(multiplier=1.5, min=2, max=60), stop=stop_after_attempt(8))
-def _invoke_groq(prompt: str) -> ParsedResume:
-    llm = _get_groq_llm()
-    structured = llm.with_structured_output(ParsedResume)
-    return structured.invoke(prompt)
-
-def _parse_with_fallback(prompt: str) -> ParsedResume:
-    """Try Gemini first, fall back to Groq on any error (rate limit, timeout, etc)."""
-    # ── Attempt 1: Gemini ────────────────────────────────────────
+async def _invoke_with_structured_output(llm, prompt: str) -> ParsedResume:
+    """Invoke an LLM with structured output, with a plain-text fallback."""
     try:
-        result = _invoke_gemini(prompt)
+        structured = llm.with_structured_output(ParsedResume)
+        result = await structured.ainvoke(prompt)
+        if result is not None:
+            return result
+    except Exception as e:
+        logger.warning("Structured output failed (%s), trying plain text fallback", e)
+
+    # Fallback: ask for JSON and parse manually
+    import json
+    json_prompt = (
+        prompt + "\n\nRespond ONLY with a valid JSON object matching this schema. "
+        "Do NOT include markdown formatting or code fences:\n"
+        "{"
+        '"full_name": str|null, "email": str|null, "phone": str|null, '
+        '"location": str|null, "linkedin_url": str|null, "current_title": str|null, '
+        '"years_experience": float|null, "summary": str|null, '
+        '"skills": [str], "education": [{"degree": str|null, "institution": str|null, "year": str|null, "field_of_study": str|null}], '
+        '"experience": [{"title": str|null, "company": str|null, "duration": str|null, "description": str|null}], '
+        '"certifications": [{"name": str|null, "issuer": str|null, "year": str|null}], '
+        '"projects": [{"name": str|null, "description": str|null, "technologies": [str], "url": str|null}], '
+        '"publications": [{"title": str|null, "publisher_or_conference": str|null, "year": str|null, "url": str|null}], '
+        '"confidence_score": float'
+        "}"
+    )
+    response = await llm.ainvoke(json_prompt)
+    raw = response.content if hasattr(response, 'content') else str(response)
+    # Strip markdown code fences if present
+    raw = raw.strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
+        if raw.endswith("```"):
+            raw = raw[:-3]
+        raw = raw.strip()
+    data = json.loads(raw)
+    return ParsedResume(**data)
+
+
+async def _parse_with_fallback_async(prompt: str) -> ParsedResume:
+    """Try Gemini first (async), fall back to Groq on any error or timeout."""
+    # ── Attempt Gemini ──
+    try:
+        gemini = _get_gemini_llm()
+        result = await asyncio.wait_for(
+            _invoke_with_structured_output(gemini, prompt),
+            timeout=50.0,
+        )
         logger.info("Parsed with Gemini OK: %s", result.full_name)
         return result
+    except asyncio.TimeoutError:
+        logger.warning("Gemini timed out after 50s, falling back to Groq")
     except Exception as e:
         logger.warning("Gemini failed (%s), falling back to Groq", e)
 
-    # ── Attempt 2: Groq (free, fast) ────────────────────────────
-    result = _invoke_groq(prompt)
-    logger.info("Parsed with Groq OK: %s", result.full_name)
-    return result
+    # ── Attempt Groq ──
+    try:
+        groq = _get_groq_llm()
+        result = await asyncio.wait_for(
+            _invoke_with_structured_output(groq, prompt),
+            timeout=40.0,
+        )
+        logger.info("Parsed with Groq OK: %s", result.full_name)
+        return result
+    except asyncio.TimeoutError:
+        logger.error("Groq also timed out after 40s — all parsers failed")
+        raise
+    except Exception as e:
+        logger.error("All parsers failed: %s", e)
+        raise
 
 
-def parse_resume(raw_text: str) -> ParsedResume:
-    """Parse a standard resume with Gemini → Groq fallback."""
+async def parse_resume_async(raw_text: str) -> ParsedResume:
+    """Parse a standard resume asynchronously."""
     prompt = f"{_RESUME_PROMPT}RESUME TEXT:\n{raw_text}"
-    return _parse_with_fallback(prompt)
+    return await _parse_with_fallback_async(prompt)
 
 
-def parse_linkedin_resume(raw_text: str) -> ParsedResume:
-    """Parse a LinkedIn PDF with Gemini → Groq fallback."""
+async def parse_linkedin_resume_async(raw_text: str) -> ParsedResume:
+    """Parse a LinkedIn PDF asynchronously."""
     prompt = f"{_LINKEDIN_SYSTEM_PROMPT}\nLINKEDIN PROFILE TEXT:\n{raw_text}"
-    return _parse_with_fallback(prompt)
+    return await _parse_with_fallback_async(prompt)

@@ -259,4 +259,4 @@ def _summarize_payload(result: dict) -> dict:
 
 
 # Singleton orchestrator
-orchestrator = AgentOrchestrator(max_retries=2, timeout_seconds=30.0)
+orchestrator = AgentOrchestrator(max_retries=2, timeout_seconds=120.0)

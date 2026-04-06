@@ -20,7 +20,7 @@ const QUICK_ACTIONS = [
   { name: 'Dedup Check', desc: 'Clear duplicate profiles', icon: CheckSquare, path: '/dedup', gradient: 'from-amber-500 to-orange-400' },
 ];
 
-export default function HRDashboard() {
+export default function RecruiterDashboard() {
   const { user } = useAuth();
   const [overview, setOverview] = useState(null);
   const [dedup, setDedup] = useState([]);
@@ -33,7 +33,7 @@ export default function HRDashboard() {
     else if (hour < 18) setGreeting('Good afternoon');
     else setGreeting('Good evening');
 
-    async function fetchHRData() {
+    async function fetchDashboardData() {
       try {
         const [overviewRes, dedupRes] = await Promise.allSettled([
           api.get('/api/analytics/overview'),
@@ -48,7 +48,7 @@ export default function HRDashboard() {
         setLoading(false);
       }
     }
-    fetchHRData();
+    fetchDashboardData();
   }, []);
 
   const dataArea = overview?.ingestion_trends?.map(t => ({

@@ -163,7 +163,7 @@ export default function TopNav() {
                       <p className="text-sm font-semibold text-slate-900 truncate">{user?.full_name}</p>
                       <p className="text-xs text-slate-500 truncate">{user?.email}</p>
                       <span className="inline-block mt-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-600 border border-indigo-100">
-                        {user?.role || 'HR'}
+                        {user?.role === 'hr' ? 'Recruiter' : (user?.role || 'Recruiter')}
                       </span>
                     </div>
                     <NavLink
