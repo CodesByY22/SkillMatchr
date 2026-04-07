@@ -201,7 +201,7 @@ export default function JobsPage() {
       <AnimatePresence>
         {showCreate && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCreate(false)} className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999] flex items-start sm:items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto pt-48 sm:pt-24">
-            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} onClick={e => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl min-h-[70vh] flex flex-col overflow-hidden">
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} onClick={e => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl min-h-[85vh] max-h-[92vh] flex flex-col overflow-hidden">
               <div className="flex items-center justify-between px-10 py-6 border-b border-slate-100 bg-white shrink-0 z-10">
                 <h3 className="text-2xl font-bold text-slate-900">Create New Job</h3>
                 <button type="button" onClick={() => setShowCreate(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"><X className="w-6 h-6" /></button>
@@ -304,7 +304,7 @@ export default function JobsPage() {
       <AnimatePresence>
         {(matchResults || matchLoading) && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setMatchResults(null); setMatchLoading(false); }} className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999] flex items-start sm:items-center justify-center p-4 overflow-y-auto pt-48 sm:pt-24">
-            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} onClick={e => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} onClick={e => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl min-h-[85vh] max-h-[92vh] flex flex-col overflow-hidden">
               {matchLoading ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-3">
                   <div className="w-10 h-10 border-3 border-t-indigo-500 border-slate-200 rounded-full animate-spin" />
