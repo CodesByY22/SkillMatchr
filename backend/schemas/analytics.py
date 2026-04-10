@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import List
 
 from pydantic import BaseModel
 
@@ -26,7 +27,7 @@ class ExperienceBreakdown(BaseModel):
 class AnalyticsOverview(BaseModel):
     total_candidates: int
     total_shortlists: int
-    sources: list[SourceBreakdown]
-    ingestion_trends: list[IngestionTrend]
-    status_breakdown: list[StatusBreakdown] = []
-    experience_breakdown: list[ExperienceBreakdown] = []
+    sources: List[SourceBreakdown]
+    ingestion_trends: List[IngestionTrend]
+    status_breakdown: List[StatusBreakdown] = []
+    experience_breakdown: List[ExperienceBreakdown] = []

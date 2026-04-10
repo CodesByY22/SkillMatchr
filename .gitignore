@@ -1,34 +1,51 @@
 # Environments
 .env
-.venv
+.env.*
+!.env.example
 venv/
+env/
 ENV/
 env.bak/
 venv.bak/
 
-# Environment Variables
-*.env
-**/.env
-
-# Dependencies
-node_modules/
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.mypy_cache/
 
-# IDEs and OS
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+.pnpm-debug.log
+
+# IDE / Editor
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# OS Data
 .DS_Store
-
-# Build folders
-dist/
-build/
-.next/
-
-# Databases & Vector Stores
-*.sqlite3
-chroma_data/
-*.db
-
-# Logs
-*.log
+Thumbs.db

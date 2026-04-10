@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import List
 """BambooHR HRMS client.
 
 When MOCK_HRMS_ENABLED is true, returns 3 realistic candidate records
@@ -8,7 +10,6 @@ Intentional duplicate:
   - "Michael Chen" / "Mike Chen" — same person, different name/email variants
 """
 
-from __future__ import annotations
 
 import httpx
 
@@ -19,7 +20,7 @@ from backend.services.workflows.ingestion_graph import ingestion_graph
 
 # ── 3 realistic HRMS records (1 duplicate pair + 1 unique) ───────
 
-MOCK_HRMS_RECORDS: list[dict] = [
+MOCK_HRMS_RECORDS: List[dict] = [
     # ── Candidate 1: Michael Chen (DUPLICATE A) ──────────────────
     {
         "employee_id": "BHR-1042",
@@ -127,7 +128,7 @@ MOCK_HRMS_RECORDS: list[dict] = [
 ]
 
 
-async def fetch_bamboohr_candidates() -> list[dict]:
+async def fetch_bamboohr_candidates() -> List[dict]:
     """Fetch candidates from BambooHR API or return mock data."""
     settings = get_settings()
 
@@ -150,7 +151,7 @@ async def fetch_bamboohr_candidates() -> list[dict]:
     return data.get("employees", [])
 
 
-async def sync_hrms_candidates(user_id: str) -> list[dict]:
+async def sync_hrms_candidates(user_id: str) -> List[dict]:
     """Fetch candidates from HRMS and run each through the full ingestion pipeline.
 
     Each candidate goes through:

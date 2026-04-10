@@ -1,3 +1,4 @@
+from typing import Optional
 import uuid
 from datetime import datetime
 
@@ -19,13 +20,13 @@ class DedupQueue(Base, UUIDPrimaryKey, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("candidates.id", ondelete="CASCADE"), nullable=False
     )
     composite_score: Mapped[float] = mapped_column(Float, nullable=False)
-    score_breakdown: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    score_breakdown: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     status: Mapped[str] = mapped_column(
         String(30), nullable=False, default="pending", index=True
     )
-    resolved_by: Mapped[uuid.UUID | None] = mapped_column(
+    resolved_by: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )
-    resolved_at: Mapped[datetime | None] = mapped_column(
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

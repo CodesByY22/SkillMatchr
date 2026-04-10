@@ -61,11 +61,15 @@
 @layer utilities {
   /* --- Glass Cards --- */
   .glass {
-    @apply bg-white/70 backdrop-blur-xl border border-slate-200/60 shadow-sm;
+    @apply bg-white/70 backdrop-blur-xl border border-slate-200/50 shadow-[0_4px_24px_rgba(0,0,0,0.02)];
   }
   
   .glass-card {
-    @apply bg-white/90 backdrop-blur-lg border border-slate-200/60 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300;
+    @apply bg-white/90 backdrop-blur-2xl border border-slate-200/50 rounded-[1.25rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(99,102,241,0.08)] hover:-translate-y-0.5 hover:border-indigo-100/80 transition-all duration-300;
+  }
+  
+  .glass-card-sm {
+    @apply bg-white/80 backdrop-blur-xl border border-slate-200/50 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] transition-all duration-300;
   }
   
   .text-gradient {
@@ -74,7 +78,7 @@
 
   /* --- Micro animations --- */
   .hover-lift {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)];
   }
 
   .animate-in {
@@ -141,7 +145,7 @@
   }
   .glow-effect::before {
     content: '';
-    @apply absolute -inset-0.5 bg-gradient-to-r from-indigo-400 to-violet-400 rounded-2xl blur opacity-20 transition duration-500 group-hover:opacity-40;
+    @apply absolute -inset-0.5 bg-gradient-to-r from-indigo-400 to-violet-400 rounded-3xl blur opacity-20 transition duration-500 group-hover:opacity-40;
     z-index: -1;
   }
 

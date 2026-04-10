@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional, List
 
 import uuid
 from datetime import datetime
@@ -10,11 +11,11 @@ class ActivityLogItem(BaseModel):
     user_id: uuid.UUID
     action: str
     entity_type: str
-    entity_id: uuid.UUID | None = None
-    metadata: dict | None = None
+    entity_id: Optional[uuid.UUID] = None
+    metadata: Optional[dict] = None
     created_at: datetime
 
 
 class ActivityLogResponse(BaseModel):
     total: int
-    results: list[ActivityLogItem]
+    results: List[ActivityLogItem]

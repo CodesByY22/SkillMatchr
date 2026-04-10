@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional, List
 """Merge logic for candidate deduplication.
 
 When two candidates are determined to be the same person, this module
@@ -11,7 +13,6 @@ Field resolution strategy:
     5. All decisions recorded in field_resolutions JSONB
 """
 
-from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
@@ -32,9 +33,9 @@ async def merge_candidates(
     session: AsyncSession,
     primary: Candidate,
     new_data: dict,
-    new_embedding: list[float] | None,
+    new_embedding: Optional[List[float]],
     merge_type: str = "auto",
-    merged_by: uuid.UUID | None = None,
+    merged_by: Optional[uuid.UUID] = None,
     score_reason: str = "",
 ) -> dict:
     """Merge new_data into the primary candidate record.

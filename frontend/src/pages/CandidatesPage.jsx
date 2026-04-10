@@ -451,18 +451,20 @@ export default function CandidatesPage() {
         <div className="glass-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-100">
-                  <th className="px-5 py-3.5 w-10">
-                    <input type="checkbox" checked={candidates.length > 0 && selectedIds.size === candidates.length} onChange={handleSelectAll}
-                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+              <thead className="sticky top-[72px] z-10 bg-slate-50/95 backdrop-blur-md shadow-sm border-b border-slate-200">
+                <tr>
+                  <th className="px-5 w-10">
+                    <div className="flex h-10 items-center">
+                      <input type="checkbox" checked={candidates.length > 0 && selectedIds.size === candidates.length} onChange={handleSelectAll}
+                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+                    </div>
                   </th>
-                  <th className="text-left py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Candidate</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Exp</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Source</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">AI Score</th>
-                  <th className="px-5 py-3.5" />
+                  <th className="text-left py-3 text-xs font-extrabold text-slate-500 uppercase tracking-widest">Candidate</th>
+                  <th className="text-left px-5 py-3 text-xs font-extrabold text-slate-500 uppercase tracking-widest">Exp</th>
+                  <th className="text-left px-5 py-3 text-xs font-extrabold text-slate-500 uppercase tracking-widest">Source</th>
+                  <th className="text-left px-5 py-3 text-xs font-extrabold text-slate-500 uppercase tracking-widest">Status</th>
+                  <th className="text-left px-5 py-3 text-xs font-extrabold text-slate-500 uppercase tracking-widest">AI Score</th>
+                  <th className="px-5 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">

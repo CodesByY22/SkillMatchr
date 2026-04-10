@@ -1,10 +1,11 @@
+from __future__ import annotations
+from typing import List, Dict
 """Groq-powered query analyzer for natural language search.
 
 Uses ChatGroq (llama3-8b-8192) with structured output to parse
 a raw search query into semantic + filter components.
 """
 
-from __future__ import annotations
 
 import re
 
@@ -20,7 +21,7 @@ class SearchIntent(BaseModel):
         description="The core semantic meaning of the search query, "
         "rephrased for embedding similarity search against candidate profiles."
     )
-    skills: list[str] = Field(
+    skills: List[str] = Field(
         default_factory=list,
         description="Specific technical or professional skills mentioned in the query. "
         "Include programming languages, frameworks, cloud platforms, tools. "
@@ -102,7 +103,7 @@ SYSTEM_PROMPT = (
 )
 
 
-CITY_ALIASES: dict[str, str] = {
+CITY_ALIASES: Dict[str, str] = {
     "nyc": "New York",
     "new york city": "New York",
     "new york": "New York",
@@ -117,7 +118,7 @@ CITY_ALIASES: dict[str, str] = {
     "bos": "Boston",
 }
 
-SENIORITY_EXPERIENCE: dict[str, int] = {
+SENIORITY_EXPERIENCE: Dict[str, int] = {
     "senior": 5,
     "staff": 8,
     "principal": 12,

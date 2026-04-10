@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional, List
 
 import uuid
 from pydantic import BaseModel, Field
@@ -6,31 +7,31 @@ from pydantic import BaseModel, Field
 
 class JobCreate(BaseModel):
     title: str
-    company: str | None = None
-    department: str | None = None
-    location: str | None = None
+    company: Optional[str] = None
+    department: Optional[str] = None
+    location: Optional[str] = None
     employment_type: str = "full_time"
-    experience_required: float | None = None
-    salary_min: float | None = None
-    salary_max: float | None = None
-    skills_required: list[str] = Field(default_factory=list)
-    job_description: str | None = None
+    experience_required: Optional[float] = None
+    salary_min: Optional[float] = None
+    salary_max: Optional[float] = None
+    skills_required: List[str] = Field(default_factory=list)
+    job_description: Optional[str] = None
 
 
 class JobResponse(BaseModel):
     id: uuid.UUID
     title: str
-    company: str | None
-    department: str | None
-    location: str | None
-    employment_type: str | None
-    experience_required: float | None
-    salary_min: float | None
-    salary_max: float | None
-    skills_required: list[str] | None
-    job_description: str | None
+    company: Optional[str]
+    department: Optional[str]
+    location: Optional[str]
+    employment_type: Optional[str]
+    experience_required: Optional[float]
+    salary_min: Optional[float]
+    salary_max: Optional[float]
+    skills_required: Optional[List[str]]
+    job_description: Optional[str]
     status: str
-    created_by: uuid.UUID | None
+    created_by: Optional[uuid.UUID]
     created_at: str
     updated_at: str
 
@@ -52,13 +53,13 @@ class MatchScoreBreakdown(BaseModel):
 class MatchResultItem(BaseModel):
     candidate_id: str
     full_name: str
-    email: str | None
-    location: str | None
-    current_title: str | None
-    years_experience: float | None
-    skills: list[str] | None
-    missing_skills: list[str] = Field(default_factory=list)
-    upskill_suggestions: list[str] = Field(default_factory=list)
+    email: Optional[str]
+    location: Optional[str]
+    current_title: Optional[str]
+    years_experience: Optional[float]
+    skills: Optional[List[str]]
+    missing_skills: List[str] = Field(default_factory=list)
+    upskill_suggestions: List[str] = Field(default_factory=list)
     composite_score: float
     breakdown: MatchScoreBreakdown
 
@@ -67,23 +68,23 @@ class MatchResponse(BaseModel):
     job_id: str
     job_title: str
     total: int
-    results: list[MatchResultItem]
+    results: List[MatchResultItem]
 
 
 class CompareRequest(BaseModel):
-    candidate_ids: list[str]
+    candidate_ids: List[str]
 
 
 class CompareCandidate(BaseModel):
     candidate_id: str
     full_name: str
-    email: str | None
-    location: str | None
-    current_title: str | None
-    years_experience: float | None
-    skills: list[str] | None
-    education: list[dict] | None
-    experience: list[dict] | None
+    email: Optional[str]
+    location: Optional[str]
+    current_title: Optional[str]
+    years_experience: Optional[float]
+    skills: Optional[List[str]]
+    education: Optional[List[dict]]
+    experience: Optional[List[dict]]
     semantic_match: float
     skill_overlap: float
     experience_score: float
@@ -93,4 +94,4 @@ class CompareCandidate(BaseModel):
 class CompareResponse(BaseModel):
     job_id: str
     job_title: str
-    candidates: list[CompareCandidate]
+    candidates: List[CompareCandidate]

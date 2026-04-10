@@ -26,9 +26,10 @@ function ProtectedRoute({ children }) {
   if (!user) return <Navigate to="/" replace />;
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/20 text-slate-900 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-[#f8fafc] to-indigo-50/20 text-slate-900 pb-20 font-sans selection:bg-indigo-100 selection:text-indigo-900">
       <TopNav />
-      <div className="pt-24 px-4 sm:px-6 max-w-[1400px] mx-auto">
+      {/* Expansive layout wrapper */}
+      <div className="pt-24 px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 w-full max-w-[1920px] mx-auto">
         <div className="page-enter">
           {children}
         </div>

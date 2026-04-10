@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional, List, Dict
 """V1 API — Production endpoints for third-party consumption.
 
 Endpoints:
@@ -14,7 +16,6 @@ Endpoints:
   GET  /api/v1/metrics         – Evaluation metrics
 """
 
-from __future__ import annotations
 
 import hashlib
 import secrets
@@ -130,8 +131,8 @@ async def parse_resume(
     summary="Batch process multiple resumes",
 )
 async def parse_batch(
-    files: list[UploadFile] = File(...),
-    webhook_url: str | None = Query(None),
+    files: List[UploadFile] = File(...),
+    webhook_url: Optional[str] = Query(None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -368,7 +369,7 @@ async def match_candidate(
 )
 async def search_taxonomy(
     q: str = Query("", description="Search query"),
-    category: str | None = Query(None),
+    category: Optional[str] = Query(None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -394,7 +395,7 @@ async def search_taxonomy(
 
     # Get synonyms for matched skills
     skill_ids = [s.id for s in skills]
-    synonyms_map: dict[uuid.UUID, list[str]] = {}
+    synonyms_map: Dict[uuid.UUID, List[str]] = {}
     if skill_ids:
         syn_result = await db.execute(
             select(SkillSynonym).where(SkillSynonym.canonical_skill_id.in_(skill_ids))
@@ -466,7 +467,7 @@ async def create_webhook(
 # API Key Management
 # ═══════════════════════════════════════════════════════════════
 
-@router.get("/api-keys", response_model=list[ApiKeyListItem], summary="List API keys")
+@router.get("/api-keys", response_model=List[ApiKeyListItem], summary="List API keys")
 async def list_api_keys(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -523,7 +524,7 @@ async def create_api_key(
 
 @router.get(
     "/pipeline/runs",
-    response_model=list[PipelineRunResponse],
+    response_model=List[PipelineRunResponse],
     summary="List pipeline runs",
 )
 async def list_pipeline_runs(

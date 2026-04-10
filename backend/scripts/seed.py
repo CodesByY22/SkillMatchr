@@ -1,3 +1,4 @@
+from typing import List
 """Seed script: populates the database with realistic demo data.
 
 Usage:
@@ -352,24 +353,41 @@ ACTIONS = [
 
 async def seed():
     async with AsyncSessionLocal() as session:
-        # ── Demo user ─────────────────────────────────────────
-        demo_user = User(
-            email="demo@recruitai.com",
-            hashed_password=hash_password("password123"),
-            full_name="Demo Recruiter",
-            auth_provider="native",
-            is_active=True,
-        )
-        session.add(demo_user)
+        # ── Demo users ────────────────────────────────────────
+        users_info = [
+            {"email": "demo@recruitai.com", "pass": "password123", "name": "Demo Recruiter"},
+            {"email": "alice.manager@recruitai.com", "pass": "alicepass123", "name": "Alice M."},
+            {"email": "bob.sourcer@recruitai.com", "pass": "bobsource123", "name": "Bob S."},
+            {"email": "carol.recruiter@recruitai.com", "pass": "carolrec123", "name": "Carol R."}
+        ]
+        
+        db_users = []
+        for info in users_info:
+            u = User(
+                email=info["email"],
+                hashed_password=hash_password(info["pass"]),
+                full_name=info["name"],
+                auth_provider="native",
+                is_active=True,
+            )
+            session.add(u)
+            db_users.append(u)
+            
         await session.flush()
-        user_id = demo_user.id
-        print(f"Created demo user: demo@recruitai.com / password123  (id={user_id})")
+        
+        for i, u in enumerate(db_users):
+            print(f"Created demo user: {users_info[i]['email']} / {users_info[i]['pass']}  (id={u.id})")
+            
+        # Use first user for generic assignments but others can be used as well
+        user_id = db_users[0].id
 
         # ── Candidates ────────────────────────────────────────
-        candidate_ids: list[uuid.UUID] = []
+        candidate_ids: List[uuid.UUID] = []
         now = datetime.now(timezone.utc)
 
         for i, data in enumerate(CANDIDATES):
+            # assign randomly to one of our users
+            assigned_user_id = random.choice(db_users).id
             created_at = now - timedelta(days=random.randint(0, 29), hours=random.randint(0, 23))
             c = Candidate(
                 full_name=data["full_name"],
@@ -385,7 +403,7 @@ async def seed():
                 source=data["source"],
                 ingestion_status="completed",
                 confidence_score=round(random.uniform(0.75, 0.98), 2),
-                created_by=user_id,
+                created_by=assigned_user_id,
             )
             # Override created_at after insert via raw SQL later — for now just add
             session.add(c)

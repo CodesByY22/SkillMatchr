@@ -1,3 +1,4 @@
+from __future__ import annotations
 """LinkedIn PDF parser.
 
 LinkedIn's 'Save to PDF' exports have a known structure:
@@ -15,7 +16,6 @@ with source="linkedin" — this triggers the LinkedIn-specific Gemini prompt
 that handles nested company/role structures and endorsement noise.
 """
 
-from __future__ import annotations
 
 from backend.services.parsing.extractor import extract_text_from_pdf, ExtractionError
 from backend.services.workflows.ingestion_graph import ingestion_graph

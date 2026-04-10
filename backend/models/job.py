@@ -1,3 +1,4 @@
+from typing import Optional
 import uuid
 
 from sqlalchemy import String, Float, Text, Integer, ForeignKey
@@ -13,21 +14,21 @@ class Job(Base, UUIDPrimaryKey, TimestampMixin):
     __tablename__ = "jobs"
 
     title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    company: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    department: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    location: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    employment_type: Mapped[str | None] = mapped_column(
+    company: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    department: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    employment_type: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True, default="full_time"
     )
-    experience_required: Mapped[float | None] = mapped_column(Float, nullable=True)
-    salary_min: Mapped[float | None] = mapped_column(Float, nullable=True)
-    salary_max: Mapped[float | None] = mapped_column(Float, nullable=True)
-    skills_required: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    job_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    experience_required: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    salary_min: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    salary_max: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    skills_required: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    job_description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     embedding = mapped_column(Vector(768), nullable=True)
     status: Mapped[str] = mapped_column(
         String(30), nullable=False, default="open", index=True
     )
-    created_by: Mapped[uuid.UUID | None] = mapped_column(
+    created_by: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )

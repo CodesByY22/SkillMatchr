@@ -1,6 +1,7 @@
+from __future__ import annotations
+from typing import Optional
 """Activity logging utility."""
 
-from __future__ import annotations
 
 import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,8 +13,8 @@ async def log_activity(
     user_id: uuid.UUID,
     action: str,
     entity_type: str,
-    entity_id: uuid.UUID | None = None,
-    metadata: dict | None = None,
+    entity_id: Optional[uuid.UUID] = None,
+    metadata: Optional[dict] = None,
 ) -> None:
     """Insert an activity log record."""
     entry = ActivityLog(

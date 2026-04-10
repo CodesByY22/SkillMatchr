@@ -70,6 +70,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/", tags=["Health"])
+async def root():
+    return {
+        "status": "online",
+        "message": "Welcome to SkillMatchr API",
+        "docs": "Visit /docs for Swagger API documentation"
+    }
+
+
 app.include_router(health_router, tags=["Health"])
 app.include_router(auth_router)
 app.include_router(ingest_router)

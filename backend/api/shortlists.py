@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,7 +36,7 @@ async def _shortlist_response(db: AsyncSession, shortlist: Shortlist) -> Shortli
     )
 
 
-@router.get("", response_model=list[ShortlistResponse])
+@router.get("", response_model=List[ShortlistResponse])
 async def list_shortlists(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

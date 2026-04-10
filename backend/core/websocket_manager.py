@@ -1,10 +1,11 @@
+from __future__ import annotations
+from typing import Optional, List, Dict
 """WebSocket connection manager (singleton).
 
 Maintains a mapping of user_id -> list of active WebSocket connections.
 Supports personal messages (to a specific user) and broadcast (to all).
 """
 
-from __future__ import annotations
 
 import json
 import logging
@@ -14,16 +15,16 @@ logger = logging.getLogger(__name__)
 
 
 class ConnectionManager:
-    _instance: ConnectionManager | None = None
+    _instance: Optional[ConnectionManager] = None
 
     def __new__(cls) -> ConnectionManager:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance._connections: dict[str, list[WebSocket]] = {}
+            cls._instance._connections: Dict[str, List[WebSocket]] = {}
         return cls._instance
 
     @property
-    def connections(self) -> dict[str, list[WebSocket]]:
+    def connections(self) -> Dict[str, List[WebSocket]]:
         return self._connections
 
     async def connect(self, websocket: WebSocket, user_id: str) -> None:
@@ -49,7 +50,7 @@ class ConnectionManager:
         if user_id not in self._connections:
             return
         payload = json.dumps(message)
-        dead: list[WebSocket] = []
+        dead: List[WebSocket] = []
         for ws in self._connections[user_id]:
             try:
                 await ws.send_text(payload)
@@ -61,7 +62,7 @@ class ConnectionManager:
     async def broadcast(self, message: dict) -> None:
         """Send a JSON message to all connected users."""
         payload = json.dumps(message)
-        dead_pairs: list[tuple[WebSocket, str]] = []
+        dead_pairs: List[tuple[WebSocket, str]] = []
         for user_id, sockets in self._connections.items():
             for ws in sockets:
                 try:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional, List
 """Find Similar Candidates via pgvector cosine similarity.
 
 Given a target candidate's embedding, queries all other candidates
@@ -5,7 +7,6 @@ and returns those above a similarity threshold, ranked by closeness.
 Scoped to the same user's candidates for multi-tenancy.
 """
 
-from __future__ import annotations
 
 import uuid
 
@@ -22,8 +23,8 @@ async def get_similar_candidates(
     candidate_id: str,
     limit: int = 5,
     threshold: float = 0.75,
-    user_id: str | None = None,
-) -> list[dict]:
+    user_id: Optional[str] = None,
+) -> List[dict]:
     """Find candidates with similar profiles using pgvector cosine distance.
 
     Args:
@@ -71,7 +72,7 @@ async def get_similar_candidates(
     result = await session.execute(stmt)
     rows = result.all()
 
-    similar: list[dict] = []
+    similar: List[dict] = []
     seen_names: set[str] = set()
     for candidate, dist in rows:
         similarity = max(0.0, min(1.0, 1.0 - (dist or 0.0)))

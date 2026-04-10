@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Google OAuth2 authorization code flow with Gmail scope.
 
 Handles:
@@ -6,7 +7,6 @@ Handles:
   3. Fetching user profile info from Google
 """
 
-from __future__ import annotations
 
 from datetime import datetime, timezone
 from urllib.parse import urlencode

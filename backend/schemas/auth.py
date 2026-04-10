@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional
 import uuid
 from datetime import datetime
 
@@ -40,7 +42,7 @@ class UserResponse(BaseModel):
     id: uuid.UUID
     email: str
     full_name: str
-    avatar_url: str | None
+    avatar_url: Optional[str]
     auth_provider: str
     is_active: bool
     role: str

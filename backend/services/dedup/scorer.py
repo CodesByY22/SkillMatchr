@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional, List, Dict
 """Stage 2: Multi-Layer Cascading Dedup Scorer.
 
 Layer 1 (Deterministic): Exact email or phone match → instant 0.95 score.
@@ -13,7 +15,6 @@ the email signal and redistributes that weight to name/embedding/LinkedIn,
 allowing strong name + embedding match to reach the merge threshold.
 """
 
-from __future__ import annotations
 
 import logging
 import re
@@ -45,7 +46,7 @@ NAME_BYPASS_THRESHOLD = 0.75
 # ── Individual signal scorers ─────────────────────────────────────
 
 
-def score_email(new_email: str | None, existing_email: str | None) -> tuple[float, bool]:
+def score_email(new_email: Optional[str], existing_email: Optional[str]) -> tuple[float, bool]:
     """Score email similarity. Returns (score, both_present)."""
     if not new_email or not existing_email:
         return 0.0, False
@@ -59,7 +60,7 @@ def score_email(new_email: str | None, existing_email: str | None) -> tuple[floa
     return 0.0, True
 
 
-def score_phone(new_phone: str | None, existing_phone: str | None) -> tuple[float, bool]:
+def score_phone(new_phone: Optional[str], existing_phone: Optional[str]) -> tuple[float, bool]:
     """Score phone similarity. Returns (score, both_present)."""
     if not new_phone or not existing_phone:
         return 0.0, False
@@ -76,7 +77,7 @@ def score_phone(new_phone: str | None, existing_phone: str | None) -> tuple[floa
     return 0.0, True
 
 
-def score_name(new_name: str | None, existing_name: str | None) -> tuple[float, bool]:
+def score_name(new_name: Optional[str], existing_name: Optional[str]) -> tuple[float, bool]:
     """Score name similarity using token_sort_ratio + partial_ratio.
 
     Handles: 'Jordan Davis' vs 'Davis, Jordan', 'Jon' vs 'Jonathan', etc.
@@ -94,7 +95,7 @@ def score_name(new_name: str | None, existing_name: str | None) -> tuple[float, 
     return round(score, 4), True
 
 
-def score_linkedin(new_url: str | None, existing_url: str | None) -> tuple[float, bool]:
+def score_linkedin(new_url: Optional[str], existing_url: Optional[str]) -> tuple[float, bool]:
     """Score LinkedIn URL match. Returns (score, both_present)."""
     if not new_url or not existing_url:
         return 0.0, False
@@ -106,8 +107,8 @@ def score_linkedin(new_url: str | None, existing_url: str | None) -> tuple[float
 
 
 def score_embedding(
-    new_embedding: list[float] | None,
-    existing_embedding: list | None,
+    new_embedding: Optional[List[float]],
+    existing_embedding: Optional[list],
 ) -> tuple[float, bool]:
     """Score embedding cosine similarity. Returns (score, both_present)."""
     if new_embedding is None or existing_embedding is None:
@@ -129,14 +130,14 @@ def score_embedding(
 @dataclass
 class ScoreResult:
     composite_score: float
-    breakdown: dict[str, float]
+    breakdown: Dict[str, float]
     matched_candidate_id: str
     match_reason: str
 
 
 def compute_composite_score(
     parsed_data: dict,
-    embedding: list[float] | None,
+    embedding: Optional[List[float]],
     existing: Candidate,
 ) -> ScoreResult:
     """Multi-layer cascading dedup score.
@@ -216,7 +217,7 @@ def compute_composite_score(
     # ── Layer 2: Adaptive weighted scoring ───────────────────────
     # Only include signals where BOTH sides have data.
     # Redistribute weights of null-field signals proportionally.
-    active_signals: dict[str, tuple[float, float]] = {}  # signal -> (score, base_weight)
+    active_signals: Dict[str, tuple[float, float]] = {}  # signal -> (score, base_weight)
 
     if email_present:
         active_signals["email"] = (email_s, BASE_WEIGHTS["email"])
@@ -290,7 +291,7 @@ def compute_composite_score(
 # ── Helpers ───────────────────────────────────────────────────────
 
 
-def _normalize_linkedin(url: str) -> str | None:
+def _normalize_linkedin(url: str) -> Optional[str]:
     """Normalize a LinkedIn URL to just the profile slug."""
     if not url:
         return None

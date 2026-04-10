@@ -4,9 +4,8 @@ State: user_query -> intent (SearchIntent) -> results (list of candidates)
 Nodes: analyze_query -> execute_search
 """
 
-from __future__ import annotations
 
-from typing import TypedDict
+from typing import TypedDict, Optional, List
 from langgraph.graph import StateGraph, END
 
 from backend.services.search.query_analyzer import SearchIntent, analyze_query
@@ -18,10 +17,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 class SearchState(TypedDict, total=False):
     user_query: str
     intent: dict
-    results: list[dict]
+    results: List[dict]
     session: AsyncSession
-    user_id: str | None
-    error: str | None
+    user_id: Optional[str]
+    error: Optional[str]
 
 
 async def analyze_query_node(state: SearchState) -> dict:

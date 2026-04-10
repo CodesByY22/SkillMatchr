@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional, List
 """Advanced Hybrid Search: Strict Pre-Filtering + Semantic Ranking.
 
 Pipeline:
@@ -10,7 +12,6 @@ This ensures "AWS developer with 10+ years" NEVER returns candidates
 with <10 years or no AWS experience, regardless of embedding similarity.
 """
 
-from __future__ import annotations
 
 import uuid
 from sqlalchemy import select, and_, or_, func, cast, String, case, literal
@@ -34,7 +35,7 @@ _STOP_WORDS = frozenset({
 })
 
 
-def _build_strict_filters(intent: SearchIntent, user_id: str | None = None) -> list:
+def _build_strict_filters(intent: SearchIntent, user_id: Optional[str] = None) -> list:
     """Build hard-constraint SQL WHERE clauses from the parsed intent.
 
     These filters are applied BEFORE any ranking — candidates that don't
@@ -94,7 +95,7 @@ def _compute_composite_score(intent: SearchIntent):
     skill_keywords = [s.lower() for s in intent.skills]
 
     # Non-skill query words (for title + summary signals)
-    query_words: list[str] = []
+    query_words: List[str] = []
     for word in intent.semantic_query.split():
         w = word.strip().lower()
         if len(w) >= 3 and w not in _STOP_WORDS and w not in skill_keywords:
@@ -194,8 +195,8 @@ async def search_candidates(
     session: AsyncSession,
     intent: SearchIntent,
     limit: int = 20,
-    user_id: str | None = None,
-) -> list[dict]:
+    user_id: Optional[str] = None,
+) -> List[dict]:
     """Execute hybrid search: strict SQL pre-filter → semantic/keyword rank.
 
     Guarantees: a query for "AWS developer with 10+ years" will ONLY return

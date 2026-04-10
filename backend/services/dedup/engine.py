@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional, List
 """Deduplication engine — Multi-Layer Cascading approach.
 
 Flow:
@@ -12,7 +14,6 @@ Flow:
        - NEW_CANDIDATE (score < 0.60)  — no match found
 """
 
-from __future__ import annotations
 
 import logging
 import uuid
@@ -41,18 +42,18 @@ THRESHOLD_MANUAL_REVIEW = 0.60
 @dataclass
 class DedupResult:
     classification: DedupClassification
-    best_match_id: str | None
+    best_match_id: Optional[str]
     best_score: float
-    score_breakdown: dict | None
-    all_matches: list[ScoreResult]
+    score_breakdown: Optional[dict]
+    all_matches: List[ScoreResult]
 
 
 async def run_dedup_check(
     session: AsyncSession,
     parsed_data: dict,
-    embedding: list[float] | None,
-    exclude_id: uuid.UUID | None = None,
-    user_id: str | None = None,
+    embedding: Optional[List[float]],
+    exclude_id: Optional[uuid.UUID] = None,
+    user_id: Optional[str] = None,
 ) -> DedupResult:
     """Run the full dedup pipeline: block -> score -> classify.
 
@@ -96,7 +97,7 @@ async def run_dedup_check(
         )
 
     # Stage 2: Score each candidate through the 3-layer cascade
-    scored: list[ScoreResult] = []
+    scored: List[ScoreResult] = []
     for candidate in candidates:
         result = compute_composite_score(parsed_data, embedding, candidate)
         scored.append(result)

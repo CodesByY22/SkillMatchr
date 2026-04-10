@@ -1,3 +1,4 @@
+from typing import Optional
 from datetime import datetime
 
 from sqlalchemy import String, Boolean, Text, DateTime
@@ -11,14 +12,14 @@ class User(Base, UUIDPrimaryKey, TimestampMixin):
     __tablename__ = "users"
 
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
-    hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    hashed_password: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    avatar_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     auth_provider: Mapped[str] = mapped_column(String(50), nullable=False, default="native")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     role: Mapped[str] = mapped_column(String(50), default="recruiter", nullable=False, server_default="recruiter")
 
     # Google OAuth tokens (for Gmail API access)
-    google_access_token: Mapped[str | None] = mapped_column(Text, nullable=True)
-    google_refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
-    google_token_expiry: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    google_access_token: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    google_refresh_token: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    google_token_expiry: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)

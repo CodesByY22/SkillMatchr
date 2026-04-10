@@ -102,7 +102,7 @@ export default function IngestPage() {
   const failCount = results.filter(r => r.status === 'error').length;
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="space-y-8 max-w-6xl mx-auto">
       <div>
         <h2 className="text-2xl font-bold text-slate-900">Ingest Candidates</h2>
         <p className="text-slate-500 text-sm mt-1">Upload resumes or sync from external sources</p>

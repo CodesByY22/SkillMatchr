@@ -1,8 +1,7 @@
-from __future__ import annotations
 
 import logging
 import uuid
-from typing import TypedDict
+from typing import TypedDict, Optional, List
 
 from langgraph.graph import StateGraph, END
 
@@ -28,16 +27,16 @@ class IngestionState(TypedDict, total=False):
     # Pipeline outputs
     raw_text: str
     parsed_data: dict
-    embedding: list[float]
+    embedding: List[float]
     # Dedup results
     dedup_classification: str       # "auto_merge" | "manual_review" | "new_candidate"
-    dedup_match_id: str | None      # UUID of best matching candidate
+    dedup_match_id: Optional[str]      # UUID of best matching candidate
     dedup_score: float
-    dedup_breakdown: dict | None
+    dedup_breakdown: Optional[dict]
     # Final
     candidate_id: str
     status: str
-    error: str | None
+    error: Optional[str]
 
 
 # ── Node functions ────────────────────────────────────────────────

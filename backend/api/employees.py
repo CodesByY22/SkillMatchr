@@ -1,3 +1,4 @@
+from typing import List
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -50,7 +51,7 @@ async def create_employee(
     )
 
 
-@router.get("", response_model=list[EmployeeResponse])
+@router.get("", response_model=List[EmployeeResponse])
 async def list_employees(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

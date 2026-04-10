@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Enhanced Ingestion Pipeline — Orchestrated multi-agent workflow.
 
 Integrates:
@@ -10,11 +11,10 @@ Integrates:
 All wrapped with the AgentOrchestrator for retry, tracing, and degradation.
 """
 
-from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any
+from typing import Any, Optional
 
 from backend.services.orchestrator.agent_orchestrator import orchestrator, PipelineRun
 from backend.services.parsing.extractor import extract_text, ExtractionError
@@ -237,8 +237,8 @@ async def run_orchestrated_ingestion(
     file_bytes: bytes,
     filename: str,
     source: str = "resume_upload",
-    user_id: str | None = None,
-    raw_text: str | None = None,
+    user_id: Optional[str] = None,
+    raw_text: Optional[str] = None,
 ) -> tuple[dict, PipelineRun]:
     """Run the full ingestion pipeline with orchestrated agents.
 

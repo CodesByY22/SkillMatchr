@@ -1,3 +1,4 @@
+from typing import List
 import uuid
 import logging
 
@@ -63,7 +64,7 @@ async def create_job(
     return _job_to_response(job)
 
 
-@router.get("", response_model=list[JobResponse])
+@router.get("", response_model=List[JobResponse])
 async def list_jobs(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

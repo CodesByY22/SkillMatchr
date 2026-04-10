@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional, List
 
 import uuid
 from pydantic import BaseModel, Field
@@ -11,15 +12,15 @@ class SearchRequest(BaseModel):
 class SearchResultItem(BaseModel):
     candidate_id: uuid.UUID
     full_name: str
-    email: str | None = None
-    phone: str | None = None
-    location: str | None = None
-    current_title: str | None = None
-    years_experience: float | None = None
-    skills: list | None = None
-    summary: str | None = None
-    source: str | None = None
-    confidence_score: float | None = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    location: Optional[str] = None
+    current_title: Optional[str] = None
+    years_experience: Optional[float] = None
+    skills: Optional[list] = None
+    summary: Optional[str] = None
+    source: Optional[str] = None
+    confidence_score: Optional[float] = None
     similarity_score: float
 
 
@@ -27,4 +28,4 @@ class SearchResponse(BaseModel):
     query: str
     intent: dict
     total: int
-    results: list[SearchResultItem]
+    results: List[SearchResultItem]

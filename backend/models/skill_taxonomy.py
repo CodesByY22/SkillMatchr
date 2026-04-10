@@ -1,3 +1,4 @@
+from typing import Optional
 """Skill Taxonomy models — hierarchical skill database with synonym mapping.
 
 Tables:
@@ -27,8 +28,8 @@ class SkillCategory(Base, UUIDPrimaryKey, TimestampMixin):
     __tablename__ = "skill_categories"
 
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
-    description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    parent_id: Mapped[uuid.UUID | None] = mapped_column(
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    parent_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("skill_categories.id"), nullable=True
     )
     # Sub-categories support hierarchical nesting
@@ -39,11 +40,11 @@ class Skill(Base, UUIDPrimaryKey, TimestampMixin):
     __tablename__ = "skills"
 
     canonical_name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
-    category_id: Mapped[uuid.UUID | None] = mapped_column(
+    category_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("skill_categories.id"), nullable=True
     )
-    subcategory: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    subcategory: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     skill_type: Mapped[str] = mapped_column(
         String(50), nullable=False, default="technical"
     )  # technical | soft | domain | certification
@@ -81,11 +82,11 @@ class EmergingSkill(Base, UUIDPrimaryKey, TimestampMixin):
 
     raw_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     occurrences: Mapped[int] = mapped_column(Integer, default=1)
-    suggested_category: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    suggested_category: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     status: Mapped[str] = mapped_column(
         String(30), default="pending"
     )  # pending | approved | rejected
-    approved_skill_id: Mapped[uuid.UUID | None] = mapped_column(
+    approved_skill_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("skills.id"), nullable=True
     )
 
@@ -101,7 +102,7 @@ class ApiKey(Base, UUIDPrimaryKey, TimestampMixin):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     rate_limit: Mapped[int] = mapped_column(Integer, default=100)  # requests per minute
-    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_used_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class WebhookSubscription(Base, UUIDPrimaryKey, TimestampMixin):
@@ -115,7 +116,7 @@ class WebhookSubscription(Base, UUIDPrimaryKey, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    secret: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    secret: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
 
 class AgentTrace(Base, UUIDPrimaryKey, TimestampMixin):
@@ -125,12 +126,12 @@ class AgentTrace(Base, UUIDPrimaryKey, TimestampMixin):
     run_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     agent_name: Mapped[str] = mapped_column(String(100), nullable=False)
     status: Mapped[str] = mapped_column(String(30), nullable=False)  # running | success | failed | skipped
-    input_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
-    output_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
-    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
-    latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    quality_score: Mapped[float | None] = mapped_column(Float, nullable=True)
-    metadata_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    candidate_id: Mapped[uuid.UUID | None] = mapped_column(
+    input_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    output_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    latency_ms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    quality_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    metadata_json: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    candidate_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), nullable=True
     )

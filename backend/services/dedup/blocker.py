@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional, List
 """Stage 1: Blocking — narrow candidate pool before expensive scoring.
 
 Instead of comparing every new candidate against every existing one (O(n^2)),
@@ -12,7 +14,6 @@ The embedding threshold is intentionally looser than the scorer's bypass
 threshold (0.82) to ensure we don't miss candidates at the blocking stage.
 """
 
-from __future__ import annotations
 
 import logging
 import re
@@ -28,7 +29,7 @@ logger = logging.getLogger(__name__)
 _DEDUP_STATUSES = ["completed", "needs_review", "ingested", "pending_review"]
 
 
-def _normalize_phone(phone: str | None) -> str | None:
+def _normalize_phone(phone: Optional[str]) -> Optional[str]:
     """Strip all non-digit characters for comparison."""
     if not phone:
         return None
@@ -39,7 +40,7 @@ def _normalize_phone(phone: str | None) -> str | None:
     return digits if len(digits) >= 7 else None
 
 
-def _name_block_key(full_name: str | None) -> str | None:
+def _name_block_key(full_name: Optional[str]) -> Optional[str]:
     """Generate a blocking key from name: first 3 chars of last name + first initial.
 
     'Sarah Chen'  -> 'che_s'
@@ -58,11 +59,11 @@ def _name_block_key(full_name: str | None) -> str | None:
 async def find_potential_matches(
     session: AsyncSession,
     parsed_data: dict,
-    embedding: list[float] | None,
-    exclude_id: uuid.UUID | None = None,
+    embedding: Optional[List[float]],
+    exclude_id: Optional[uuid.UUID] = None,
     limit: int = 20,
-    user_id: str | None = None,
-) -> list[Candidate]:
+    user_id: Optional[str] = None,
+) -> List[Candidate]:
     """Query the DB for candidates that could be duplicates.
 
     Returns a list of Candidate ORM objects for Stage 2 scoring.
@@ -125,7 +126,7 @@ async def find_potential_matches(
     if exclude_id:
         query = query.where(Candidate.id != exclude_id)
 
-    blocked_candidates: list[Candidate] = []
+    blocked_candidates: List[Candidate] = []
     if conditions:
         cond_query = query.where(or_(*conditions)).limit(limit)
         result = await session.execute(cond_query)

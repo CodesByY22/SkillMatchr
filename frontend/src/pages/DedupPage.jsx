@@ -125,7 +125,7 @@ export default function DedupPage() {
         <div className="space-y-3">
           {queue.map((item, i) => (
             <motion.div key={item.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-              className="glass-card border border-slate-200/80 p-5 flex items-center justify-between hover:shadow-md transition-shadow">
+              className="glass-card border border-slate-200/80 p-5 flex items-center justify-between hover-lift transition-all duration-300">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center">
                   <AlertTriangle className="w-5 h-5 text-amber-500" />

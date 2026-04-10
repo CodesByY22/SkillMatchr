@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import List
 """Gmail integration for ingesting resumes from email attachments.
 
 Uses the user's Google OAuth access token (stored during login) to
@@ -6,7 +8,6 @@ query their Gmail inbox for emails with resume/CV attachments.
 Falls back to mock data when MOCK_GMAIL_ENABLED is true.
 """
 
-from __future__ import annotations
 
 import base64
 import io
@@ -95,7 +96,7 @@ async def _get_valid_access_token(user) -> str:
     return user.google_access_token
 
 
-def _walk_parts(parts: list[dict]) -> list[dict]:
+def _walk_parts(parts: List[dict]) -> List[dict]:
     """Recursively walk Gmail message parts to find all leaf parts.
 
     Gmail nests parts inside multipart/* containers, so we need to
@@ -110,7 +111,7 @@ def _walk_parts(parts: list[dict]) -> list[dict]:
     return result
 
 
-async def fetch_gmail_attachments(access_token: str, max_results: int = 10) -> list[dict]:
+async def fetch_gmail_attachments(access_token: str, max_results: int = 10) -> List[dict]:
     """Fetch email attachments from Gmail using the user's OAuth access token.
 
     Uses two search strategies:
@@ -187,7 +188,7 @@ async def fetch_gmail_attachments(access_token: str, max_results: int = 10) -> l
     return attachments
 
 
-async def sync_gmail_inbox(user_id: str, user=None, session=None) -> list[dict]:
+async def sync_gmail_inbox(user_id: str, user=None, session=None) -> List[dict]:
     """Fetch attachments from Gmail and run each through ingestion pipeline.
 
     Args:

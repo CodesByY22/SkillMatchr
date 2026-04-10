@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Map HRMS (BambooHR/Workday) field structures to our internal schema.
 
 HRMS systems return employee records with their own field names:
@@ -12,7 +13,6 @@ This module normalizes them into our ParsedResume-compatible dict
 and generates a raw_text representation for Gemini parsing.
 """
 
-from __future__ import annotations
 
 
 def hrms_record_to_candidate(record: dict) -> dict:

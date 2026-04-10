@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -75,7 +77,7 @@ async def google_oauth_url():
 async def google_oauth_callback(
     body: GoogleCallbackRequest,
     db: AsyncSession = Depends(get_db),
-    credentials: HTTPAuthorizationCredentials | None = Depends(_optional_bearer),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_optional_bearer),
 ):
     """Exchange Google authorization code for tokens.
 

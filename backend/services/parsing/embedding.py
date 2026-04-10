@@ -1,3 +1,4 @@
+from typing import List
 from google import genai
 from google.genai import types
 from backend.core.config import get_settings
@@ -22,7 +23,7 @@ def _get_async_client():
     return _async_client
 
 
-def generate_embedding(text: str) -> list[float]:
+def generate_embedding(text: str) -> List[float]:
     """Generate a 768-dimensional embedding vector for the given text."""
     client = _get_client()
     result = client.models.embed_content(
@@ -33,7 +34,7 @@ def generate_embedding(text: str) -> list[float]:
     return list(result.embeddings[0].values)
 
 
-async def generate_embedding_async(text: str) -> list[float]:
+async def generate_embedding_async(text: str) -> List[float]:
     """Generate a 768-dimensional embedding vector asynchronously."""
     import asyncio
     loop = asyncio.get_running_loop()

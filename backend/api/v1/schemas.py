@@ -1,10 +1,10 @@
+from __future__ import annotations
 """Pydantic schemas for v1 API endpoints."""
 
-from __future__ import annotations
 
 import uuid
 from pydantic import BaseModel, Field
-from typing import Any
+from typing import Any, Optional, List
 
 
 # ── Error Response ────────────────────────────────────────────────────
@@ -12,7 +12,7 @@ from typing import Any
 class ErrorResponse(BaseModel):
     error: str
     message: str
-    details: dict | None = None
+    details: Optional[dict] = None
 
 
 # ── Parse Endpoints ───────────────────────────────────────────────────
@@ -21,9 +21,9 @@ class ParseResponse(BaseModel):
     candidate_id: str
     status: str
     parsed_data: dict
-    skill_profile: dict | None = None
-    pipeline_run_id: str | None = None
-    latency_ms: int | None = None
+    skill_profile: Optional[dict] = None
+    pipeline_run_id: Optional[str] = None
+    latency_ms: Optional[int] = None
 
     model_config = {"json_schema_extra": {
         "example": {
@@ -45,7 +45,7 @@ class ParseResponse(BaseModel):
 
 
 class BatchParseRequest(BaseModel):
-    webhook_url: str | None = Field(
+    webhook_url: Optional[str] = Field(
         default=None,
         description="URL to receive callback when batch processing completes",
     )
@@ -58,9 +58,9 @@ class BatchJobStatus(BaseModel):
     processed: int
     succeeded: int
     failed: int
-    results: list[dict] | None = None
-    created_at: str | None = None
-    completed_at: str | None = None
+    results: Optional[List[dict]] = None
+    created_at: Optional[str] = None
+    completed_at: Optional[str] = None
 
 
 class BatchParseResponse(BaseModel):
@@ -74,11 +74,11 @@ class BatchParseResponse(BaseModel):
 
 class SkillEntry(BaseModel):
     canonical_name: str
-    original_name: str | None = None
-    match_type: str | None = None  # exact | synonym | fuzzy | unknown
-    proficiency: str | None = None  # expert | advanced | intermediate | beginner
-    estimated_years: float | None = None
-    category: str | None = None
+    original_name: Optional[str] = None
+    match_type: Optional[str] = None  # exact | synonym | fuzzy | unknown
+    proficiency: Optional[str] = None  # expert | advanced | intermediate | beginner
+    estimated_years: Optional[float] = None
+    category: Optional[str] = None
 
 class InferredSkill(BaseModel):
     canonical_name: str
@@ -88,9 +88,9 @@ class InferredSkill(BaseModel):
 class SkillProfileResponse(BaseModel):
     candidate_id: str
     candidate_name: str
-    skills: list[SkillEntry]
-    inferred_skills: list[InferredSkill]
-    emerging_skills: list[str]
+    skills: List[SkillEntry]
+    inferred_skills: List[InferredSkill]
+    emerging_skills: List[str]
     total_canonical: int
     total_inferred: int
     total_emerging: int
@@ -102,9 +102,9 @@ class MatchRequestBody(BaseModel):
     candidate_id: str = Field(..., description="UUID of the candidate to match")
     job_description: str = Field(..., description="Full text of the job description")
     job_title: str = Field(..., description="Job title")
-    skills_required: list[str] = Field(default_factory=list)
-    skills_nice_to_have: list[str] = Field(default_factory=list)
-    experience_required: float | None = None
+    skills_required: List[str] = Field(default_factory=list)
+    skills_nice_to_have: List[str] = Field(default_factory=list)
+    experience_required: Optional[float] = None
     match_threshold: float = Field(
         default=0.3, ge=0.0, le=1.0,
         description="Minimum match score threshold (0=broad, 1=strict)",
@@ -114,7 +114,7 @@ class MatchRequestBody(BaseModel):
 class SkillGap(BaseModel):
     skill: str
     importance: str  # required | nice_to_have
-    upskilling_suggestions: list[str]
+    upskilling_suggestions: List[str]
 
 
 class MatchResultDetail(BaseModel):
@@ -122,9 +122,9 @@ class MatchResultDetail(BaseModel):
     candidate_name: str
     overall_score: float
     breakdown: dict
-    matched_skills: list[str]
-    missing_skills: list[str]
-    gap_analysis: list[SkillGap]
+    matched_skills: List[str]
+    missing_skills: List[str]
+    gap_analysis: List[SkillGap]
     recommendation: str  # strong_match | good_match | partial_match | weak_match
 
 
@@ -138,10 +138,10 @@ class MatchResponse(BaseModel):
 class TaxonomyCategoryResponse(BaseModel):
     id: str
     name: str
-    description: str | None
-    parent_id: str | None
+    description: Optional[str]
+    parent_id: Optional[str]
     skill_count: int = 0
-    children: list[TaxonomyCategoryResponse] = []
+    children: List[TaxonomyCategoryResponse] = []
 
     model_config = {"from_attributes": True}
 
@@ -149,28 +149,28 @@ class TaxonomyCategoryResponse(BaseModel):
 class TaxonomySkillResponse(BaseModel):
     id: str
     canonical_name: str
-    category: str | None
-    subcategory: str | None
+    category: Optional[str]
+    subcategory: Optional[str]
     skill_type: str
-    synonyms: list[str] = []
+    synonyms: List[str] = []
 
 
 class TaxonomySearchResponse(BaseModel):
     query: str
     total: int
-    categories: list[TaxonomyCategoryResponse]
-    skills: list[TaxonomySkillResponse]
+    categories: List[TaxonomyCategoryResponse]
+    skills: List[TaxonomySkillResponse]
 
 
 # ── Webhook ──────────────────────────────────────────────────────────
 
 class WebhookSubscriptionCreate(BaseModel):
     url: str
-    events: list[str] = Field(
+    events: List[str] = Field(
         default=["parse.completed", "batch.completed", "match.completed"],
         description="Events to subscribe to",
     )
-    secret: str | None = Field(
+    secret: Optional[str] = Field(
         default=None,
         description="Secret to sign webhook payloads for verification",
     )
@@ -179,7 +179,7 @@ class WebhookSubscriptionCreate(BaseModel):
 class WebhookSubscriptionResponse(BaseModel):
     id: str
     url: str
-    events: list[str]
+    events: List[str]
     is_active: bool
     created_at: str
 
@@ -204,7 +204,7 @@ class ApiKeyListItem(BaseModel):
     name: str
     rate_limit: int
     is_active: bool
-    last_used_at: str | None
+    last_used_at: Optional[str]
     created_at: str
 
 
@@ -213,18 +213,18 @@ class ApiKeyListItem(BaseModel):
 class AgentTraceResponse(BaseModel):
     agent_name: str
     status: str
-    latency_ms: int | None
-    quality_score: float | None
-    error_message: str | None
-    retry_count: int | None
+    latency_ms: Optional[int]
+    quality_score: Optional[float]
+    error_message: Optional[str]
+    retry_count: Optional[int]
 
 
 class PipelineRunResponse(BaseModel):
     run_id: str
     status: str
     total_latency_ms: int
-    candidate_id: str | None
-    traces: list[AgentTraceResponse]
+    candidate_id: Optional[str]
+    traces: List[AgentTraceResponse]
 
 
 # ── Evaluation Metrics ───────────────────────────────────────────────

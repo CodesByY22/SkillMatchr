@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional, List
 import asyncio
 
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
@@ -78,15 +80,15 @@ async def upload_resume(
 class BatchFileResult(BaseModel):
     filename: str
     status: str  # "success" | "error"
-    candidate_id: str | None = None
-    error: str | None = None
+    candidate_id: Optional[str] = None
+    error: Optional[str] = None
 
 
 class BatchUploadResponse(BaseModel):
     total: int
     succeeded: int
     failed: int
-    results: list[BatchFileResult]
+    results: List[BatchFileResult]
 
 
 async def _process_single_file(
@@ -147,7 +149,7 @@ async def _process_single_file(
 
 @router.post("/upload/batch", response_model=BatchUploadResponse)
 async def upload_batch(
-    files: list[UploadFile] = File(...),
+    files: List[UploadFile] = File(...),
     current_user: User = Depends(get_current_user),
 ):
     """Upload multiple resume files at once.

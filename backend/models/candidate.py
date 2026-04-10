@@ -1,3 +1,4 @@
+from typing import Optional
 import uuid
 
 from sqlalchemy import String, Float, Text, ForeignKey
@@ -13,35 +14,35 @@ class Candidate(Base, UUIDPrimaryKey, TimestampMixin):
     __tablename__ = "candidates"
 
     full_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    email: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
-    phone: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
-    linkedin_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    location: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    current_title: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    years_experience: Mapped[float | None] = mapped_column(Float, nullable=True)
+    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
+    phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    linkedin_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    current_title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    years_experience: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
-    skills: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    education: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    experience: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    certifications: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    projects: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    publications: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    skills: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    education: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    experience: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    certifications: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    projects: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    publications: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
 
-    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
-    raw_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    raw_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     embedding = mapped_column(Vector(768), nullable=True)
 
     source: Mapped[str] = mapped_column(
         String(50), nullable=False, default="resume_upload"
     )
-    source_ref: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_ref: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     ingestion_status: Mapped[str] = mapped_column(
         String(30), nullable=False, default="pending"
     )
-    ingestion_error: Mapped[str | None] = mapped_column(Text, nullable=True)
-    confidence_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    ingestion_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    confidence_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
-    created_by: Mapped[uuid.UUID | None] = mapped_column(
+    created_by: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )
 
@@ -56,8 +57,8 @@ class CandidateMergeHistory(Base, UUIDPrimaryKey, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("candidates.id"), nullable=False
     )
     merge_type: Mapped[str] = mapped_column(String(30), nullable=False, default="auto")
-    merge_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    field_resolutions: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    merged_by: Mapped[uuid.UUID | None] = mapped_column(
+    merge_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    field_resolutions: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    merged_by: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )

@@ -70,7 +70,7 @@ export default function TopNav() {
           ? 'bg-white/85 backdrop-blur-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] border-b border-slate-200/50 py-2.5'
           : 'bg-white/50 backdrop-blur-md py-4'
       }`}>
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
+        <div className="max-w-[1920px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
           <div className="flex items-center justify-between">
 
             {/* Logo */}

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Multi-Agent Orchestration Layer.
 
 Manages the lifecycle of parsing, normalization, and matching agents
@@ -5,7 +6,6 @@ with shared message protocol, retry logic, graceful degradation,
 and per-agent execution traces / latency metrics / quality scores.
 """
 
-from __future__ import annotations
 
 import asyncio
 import logging
@@ -13,7 +13,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Optional, List, Dict
 
 from backend.core.database import AsyncSessionLocal
 from backend.models.skill_taxonomy import AgentTrace
@@ -36,9 +36,9 @@ class AgentMessage:
     agent_name: str
     status: AgentStatus
     payload: dict = field(default_factory=dict)
-    error: str | None = None
+    error: Optional[str] = None
     latency_ms: int = 0
-    quality_score: float | None = None
+    quality_score: Optional[float] = None
     retry_count: int = 0
 
 
@@ -47,9 +47,9 @@ class PipelineRun:
     """Tracks a single end-to-end pipeline execution."""
     run_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     started_at: float = field(default_factory=time.time)
-    traces: list[AgentMessage] = field(default_factory=list)
+    traces: List[AgentMessage] = field(default_factory=list)
     status: str = "running"
-    candidate_id: str | None = None
+    candidate_id: Optional[str] = None
     total_latency_ms: int = 0
 
     def elapsed_ms(self) -> int:
@@ -62,7 +62,7 @@ class AgentOrchestrator:
     def __init__(self, max_retries: int = 2, timeout_seconds: float = 30.0):
         self.max_retries = max_retries
         self.timeout_seconds = timeout_seconds
-        self._active_runs: dict[str, PipelineRun] = {}
+        self._active_runs: Dict[str, PipelineRun] = {}
 
     async def execute_agent(
         self,
@@ -158,7 +158,7 @@ class AgentOrchestrator:
 
     async def run_pipeline(
         self,
-        agents: list[dict],
+        agents: List[dict],
         initial_state: dict,
     ) -> tuple[dict, PipelineRun]:
         """Run a sequence of agents as a pipeline.
@@ -200,10 +200,10 @@ class AgentOrchestrator:
 
         return state, run
 
-    def get_run(self, run_id: str) -> PipelineRun | None:
+    def get_run(self, run_id: str) -> Optional[PipelineRun]:
         return self._active_runs.get(run_id)
 
-    def get_active_runs(self) -> list[dict]:
+    def get_active_runs(self) -> List[dict]:
         return [
             {
                 "run_id": r.run_id,

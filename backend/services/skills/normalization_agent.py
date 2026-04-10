@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Skill Normalization Agent — LangGraph workflow.
 
 This agent:
@@ -8,11 +9,10 @@ This agent:
 5. Flags unknown skills as emerging for human review
 """
 
-from __future__ import annotations
 
 import logging
 import uuid
-from typing import TypedDict
+from typing import TypedDict, Optional, List, Dict
 
 from langgraph.graph import StateGraph, END
 from sqlalchemy import select, func
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 # ── Canonical synonym lookup table (in-memory cache) ──────────────────
 
-_BUILTIN_SYNONYMS: dict[str, str] = {
+_BUILTIN_SYNONYMS: Dict[str, str] = {
     # JavaScript variants
     "js": "JavaScript", "javascript": "JavaScript", "es6": "JavaScript",
     "es2015": "JavaScript", "ecmascript": "JavaScript",
@@ -97,7 +97,7 @@ _BUILTIN_SYNONYMS: dict[str, str] = {
 
 # ── Hierarchy inference rules (skill → implies parent skill) ──────────
 
-_BUILTIN_HIERARCHY: dict[str, list[str]] = {
+_BUILTIN_HIERARCHY: Dict[str, List[str]] = {
     "TensorFlow": ["Deep Learning", "Machine Learning", "Python"],
     "PyTorch": ["Deep Learning", "Machine Learning", "Python"],
     "Scikit-learn": ["Machine Learning", "Python"],
@@ -145,15 +145,15 @@ _EXPERIENCE_KEYWORDS = {
 
 class NormalizationState(TypedDict, total=False):
     """State for the skill normalization pipeline."""
-    raw_skills: list[str]
-    experience_entries: list[dict]  # work experience for context
-    years_experience: float | None
+    raw_skills: List[str]
+    experience_entries: List[dict]  # work experience for context
+    years_experience: Optional[float]
     # Pipeline outputs
-    normalized_skills: list[dict]     # canonical skills with proficiency
+    normalized_skills: List[dict]     # canonical skills with proficiency
     inferred_skills: list[dict]       # skills inferred from hierarchy
-    emerging_skills: list[str]        # unknown skills flagged for review
+    emerging_skills: List[str]        # unknown skills flagged for review
     skill_profile: dict               # final structured profile
-    error: str | None
+    error: Optional[str]
 
 
 def normalize_skills_node(state: NormalizationState) -> dict:
@@ -245,7 +245,7 @@ def estimate_proficiency_node(state: NormalizationState) -> dict:
     total_years = state.get("years_experience") or 0
 
     # Build a rough skill-to-years map from experience descriptions
-    skill_context: dict[str, float] = {}
+    skill_context: Dict[str, float] = {}
     for exp in experience_entries:
         desc = (exp.get("description") or "").lower()
         duration_str = exp.get("duration") or ""
@@ -296,7 +296,7 @@ def build_skill_profile_node(state: NormalizationState) -> dict:
     emerging = state.get("emerging_skills", [])
 
     # Group by category
-    categorized: dict[str, list[dict]] = {
+    categorized: Dict[str, List[dict]] = {
         "technical": [], "soft": [], "domain": [], "certification": [],
     }
 

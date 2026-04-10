@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional, List, Union
 """AI Job-Candidate Matching Engine.
 
 Uses pgvector semantic similarity + composite scoring to rank candidates
@@ -13,7 +15,6 @@ When candidates lack embeddings, semantic weight is redistributed to
 skill_match (0.45) and experience_match (0.30) so matching still works.
 """
 
-from __future__ import annotations
 
 import logging
 import uuid as _uuid_mod
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 _VALID_STATUSES = ["completed", "ingested", "needs_review", "pending_review"]
 
 
-def generate_job_embedding(job: Job) -> list[float]:
+def generate_job_embedding(job: Job) -> List[float]:
     """Generate embedding for a job by combining title + description + skills."""
     parts = [job.title or ""]
     if job.job_description:
@@ -46,7 +47,7 @@ def generate_job_embedding(job: Job) -> list[float]:
     return generate_embedding(text)
 
 
-def _compute_skill_match(candidate_skills: list | dict | None, job_skills: list | None) -> float:
+def _compute_skill_match(candidate_skills: Union[list, Optional[dict]], job_skills: Optional[list]) -> float:
     """Compute fraction of required job skills found in candidate skills."""
     if not job_skills:
         return 0.5
@@ -70,7 +71,7 @@ def _compute_skill_match(candidate_skills: list | dict | None, job_skills: list 
     return matched / len(job_skills)
 
 
-def _compute_skill_gap(candidate_skills: list | dict | None, job_skills: list | None) -> list[str]:
+def _compute_skill_gap(candidate_skills: Union[list, Optional[dict]], job_skills: Optional[list]) -> List[str]:
     """Gap analysis: returns required skills missing from the candidate's profile."""
     if not job_skills:
         return []
@@ -93,7 +94,7 @@ def _compute_skill_gap(candidate_skills: list | dict | None, job_skills: list | 
 
 
 def _compute_skill_match_from_text(
-    raw_text: str | None, summary: str | None, job_skills: list | None
+    raw_text: Optional[str], summary: Optional[str], job_skills: Optional[list]
 ) -> float:
     """Fallback skill match: search for skills in raw_text and summary."""
     if not job_skills:
@@ -105,7 +106,7 @@ def _compute_skill_match_from_text(
     return matched / len(job_skills)
 
 
-def _compute_experience_match(candidate_exp: float | None, required_exp: float | None) -> float:
+def _compute_experience_match(candidate_exp: Optional[float], required_exp: Optional[float]) -> float:
     if required_exp is None or required_exp <= 0:
         return 0.5
     if candidate_exp is None:
@@ -114,15 +115,15 @@ def _compute_experience_match(candidate_exp: float | None, required_exp: float |
     return max(0.2, 1.0 - diff * 0.08)
 
 
-def _compute_title_relevance(candidate_title: str | None, job_title: str | None) -> float:
+def _compute_title_relevance(candidate_title: Optional[str], job_title: Optional[str]) -> float:
     if not candidate_title or not job_title:
         return 0.3
     return fuzz.token_sort_ratio(candidate_title.lower(), job_title.lower()) / 100.0
 
 
 def _compute_semantic_similarity(
-    candidate_embedding: list | None,
-    job_embedding: list[float] | None,
+    candidate_embedding: Optional[list],
+    job_embedding: Optional[List[float]],
 ) -> float:
     if candidate_embedding is None or job_embedding is None:
         return 0.0
@@ -141,8 +142,8 @@ async def match_candidates_to_job(
     job: Job,
     top_k: int = 20,
     threshold: float = 0.20,
-    user_id: str | None = None,
-) -> list[dict]:
+    user_id: Optional[str] = None,
+) -> List[dict]:
     """Find and rank the best candidates for a job opening.
 
     Two-pass approach:
@@ -166,7 +167,7 @@ async def match_candidates_to_job(
             logger.warning("Failed to generate job embedding: %s", e)
             job_emb = None
 
-    scored: list[dict] = []
+    scored: List[dict] = []
     seen_ids: set[str] = set()
 
     # ── Pass 1: Semantic ranking (candidates with embeddings) ────────
@@ -256,9 +257,9 @@ async def match_candidates_to_job(
 async def compare_candidates_for_job(
     session: AsyncSession,
     job: Job,
-    candidate_ids: list[str],
-    user_id: str | None = None,
-) -> list[dict]:
+    candidate_ids: List[str],
+    user_id: Optional[str] = None,
+) -> List[dict]:
     """Compare specific candidates against a job with detailed metrics."""
     job_skills = job.skills_required if isinstance(job.skills_required, list) else []
     job_emb = list(job.embedding) if job.embedding is not None else None
@@ -281,7 +282,7 @@ async def compare_candidates_for_job(
     result = await session.execute(stmt)
     candidates = result.scalars().all()
 
-    compared: list[dict] = []
+    compared: List[dict] = []
     for candidate in candidates:
         cand_emb = list(candidate.embedding) if candidate.embedding is not None else None
         semantic = _compute_semantic_similarity(cand_emb, job_emb)

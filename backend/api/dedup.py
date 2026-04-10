@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional, List
 
 import logging
 import uuid
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/dedup", tags=["Deduplication"])
 
 
-@router.get("/queue", response_model=list[DedupQueueListItem])
+@router.get("/queue", response_model=List[DedupQueueListItem])
 async def list_dedup_queue(
     status_filter: str = "pending",
     limit: int = 50,
@@ -127,7 +128,7 @@ async def get_dedup_queue_item(
 @router.post("/queue/{queue_id}/merge", response_model=DedupActionResponse)
 async def merge_queue_item(
     queue_id: uuid.UUID,
-    body: MergeRequest | None = None,
+    body: Optional[MergeRequest] = None,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -350,7 +351,7 @@ async def retroactive_dedup_scan(
     }
 
 
-@router.get("/history", response_model=list[dict])
+@router.get("/history", response_model=List[dict])
 async def get_merge_history(
     limit: int = 50,
     offset: int = 0,
