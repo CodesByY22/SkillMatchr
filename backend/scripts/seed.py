@@ -24,6 +24,9 @@ from backend.models.candidate import Candidate
 from backend.models.shortlist import Shortlist, ShortlistCandidate
 from backend.models.dedup import DedupQueue
 from backend.models.activity_log import ActivityLog
+from backend.models.job import Job
+from backend.models.employee import Employee
+from backend.models.referral import Referral
 
 # ── Candidate templates ───────────────────────────────────────────
 
@@ -361,24 +364,27 @@ async def seed():
             {"email": "carol.recruiter@recruitai.com", "pass": "carolrec123", "name": "Carol R."}
         ]
         
+        from sqlalchemy import select
         db_users = []
         for info in users_info:
-            u = User(
-                email=info["email"],
-                hashed_password=hash_password(info["pass"]),
-                full_name=info["name"],
-                auth_provider="native",
-                is_active=True,
-            )
-            session.add(u)
-            db_users.append(u)
-            
-        await session.flush()
-        
-        for i, u in enumerate(db_users):
-            print(f"Created demo user: {users_info[i]['email']} / {users_info[i]['pass']}  (id={u.id})")
-            
-        # Use first user for generic assignments but others can be used as well
+            res = await session.execute(select(User).where(User.email == info["email"]))
+            existing_user = res.scalar_one_or_none()
+            if existing_user:
+                db_users.append(existing_user)
+                print(f"Found existing demo user: {info['email']} (id={existing_user.id})")
+            else:
+                u = User(
+                    email=info["email"],
+                    hashed_password=hash_password(info["pass"]),
+                    full_name=info["name"],
+                    auth_provider="native",
+                    is_active=True,
+                )
+                session.add(u)
+                await session.flush()
+                db_users.append(u)
+                print(f"Created demo user: {info['email']} / {info['pass']} (id={u.id})")
+
         user_id = db_users[0].id
 
         # ── Candidates ────────────────────────────────────────
@@ -532,6 +538,111 @@ async def seed():
             )
 
         print(f"Created 30 activity log entries")
+
+        # ── Jobs ──────────────────────────────────────────────
+        jobs_data = [
+            {
+                "title": "Senior Frontend Engineer",
+                "company": "SkillMatchr Tech",
+                "department": "Engineering",
+                "location": "San Francisco, CA (Hybrid)",
+                "employment_type": "full_time",
+                "experience_required": 5.0,
+                "salary_min": 150000,
+                "salary_max": 190000,
+                "skills_required": {"skills": ["React", "TypeScript", "Next.js", "GraphQL", "Tailwind CSS"]},
+                "job_description": "We are seeking a Senior Frontend Engineer to lead our web application team. You will build highly responsive, state-of-the-art web interfaces for our enterprise multi-agent AI platform.",
+                "status": "open",
+            },
+            {
+                "title": "Staff Backend Distributed Systems Engineer",
+                "company": "SkillMatchr Tech",
+                "department": "Infrastructure",
+                "location": "New York, NY (Remote)",
+                "employment_type": "full_time",
+                "experience_required": 8.0,
+                "salary_min": 180000,
+                "salary_max": 230000,
+                "skills_required": {"skills": ["Python", "Go", "PostgreSQL", "AsyncIO", "Kubernetes", "gRPC", "Redis"]},
+                "job_description": "Join our Core Backend team to scale high-throughput FastAPI web services and distributed AI processing pipelines serving millions of API requests.",
+                "status": "open",
+            },
+            {
+                "title": "Lead Machine Learning & AI Engineer",
+                "company": "SkillMatchr Tech",
+                "department": "AI Research",
+                "location": "Mountain View, CA",
+                "employment_type": "full_time",
+                "experience_required": 6.0,
+                "salary_min": 190000,
+                "salary_max": 250000,
+                "skills_required": {"skills": ["Python", "PyTorch", "LangChain", "LangGraph", "LLMs", "pgvector", "Docker"]},
+                "job_description": "Drive multi-agent LLM orchestration, resume parsing intelligence, and vector similarity search models across structured and unstructured talent data.",
+                "status": "open",
+            },
+            {
+                "title": "DevOps & Cloud Infrastructure Specialist",
+                "company": "SkillMatchr Tech",
+                "department": "DevOps",
+                "location": "Austin, TX (Remote)",
+                "employment_type": "full_time",
+                "experience_required": 5.0,
+                "salary_min": 140000,
+                "salary_max": 175000,
+                "skills_required": {"skills": ["Kubernetes", "Terraform", "AWS", "CI/CD", "Prometheus", "Grafana", "Docker"]},
+                "job_description": "Maintain 99.99% uptime for cloud services across AWS and Vercel/Render, optimizing CI/CD build pipelines and containerized deployments.",
+                "status": "open",
+            },
+        ]
+
+        job_ids = []
+        for j_info in jobs_data:
+            j = Job(
+                title=j_info["title"],
+                company=j_info["company"],
+                department=j_info["department"],
+                location=j_info["location"],
+                employment_type=j_info["employment_type"],
+                experience_required=j_info["experience_required"],
+                salary_min=j_info["salary_min"],
+                salary_max=j_info["salary_max"],
+                skills_required=j_info["skills_required"],
+                job_description=j_info["job_description"],
+                status=j_info["status"],
+                created_by=user_id,
+            )
+            session.add(j)
+            await session.flush()
+            job_ids.append(j.id)
+
+        print(f"Created {len(jobs_data)} open job postings")
+
+        # ── Employees & Referrals ──────────────────────────────
+        emp1 = Employee(name="Elena Rostova", email="elena.r@skillmatchr.io", department="Engineering", company="SkillMatchr Tech", created_by=user_id)
+        emp2 = Employee(name="Marcus Vance", email="marcus.v@skillmatchr.io", department="Product", company="SkillMatchr Tech", created_by=user_id)
+        session.add_all([emp1, emp2])
+        await session.flush()
+
+        if candidate_ids and job_ids:
+            ref1 = Referral(
+                employee_id=emp1.id,
+                candidate_id=candidate_ids[0],
+                job_id=job_ids[0],
+                created_by=user_id,
+                status="interviewing",
+                notes="Referred top frontend candidate from previous company."
+            )
+            ref2 = Referral(
+                employee_id=emp2.id,
+                candidate_id=candidate_ids[1],
+                job_id=job_ids[1],
+                created_by=user_id,
+                status="hired",
+                notes="High performer with exceptional backend architecture experience."
+            )
+            session.add_all([ref1, ref2])
+
+        print("Created employees and referral records")
 
         await session.commit()
         print("\nSeed complete! Login with: demo@recruitai.com / password123")
