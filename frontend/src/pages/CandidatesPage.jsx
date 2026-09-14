@@ -451,7 +451,7 @@ export default function CandidatesPage() {
         <div className="glass-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="sticky top-[72px] z-10 bg-slate-50/95 backdrop-blur-md shadow-sm border-b border-slate-200">
+              <thead className="sticky top-0 z-10 bg-slate-50 shadow-sm border-b border-slate-200">
                 <tr>
                   <th className="px-5 w-10">
                     <div className="flex h-10 items-center">
