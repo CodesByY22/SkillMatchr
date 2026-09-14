@@ -12,6 +12,15 @@ settings = get_settings()
 
 def _to_async_url(url: str) -> str:
     """Convert any postgresql:// URL to use the asyncpg driver."""
+    if "?" in url:
+        from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+        parsed = urlparse(url)
+        qs = parse_qs(parsed.query)
+        qs.pop("sslmode", None)
+        qs.pop("channel_binding", None)
+        new_query = urlencode(qs, doseq=True)
+        parsed = parsed._replace(query=new_query)
+        url = urlunparse(parsed)
     if "asyncpg" not in url:
         return url.replace("postgresql://", "postgresql+asyncpg://", 1).replace(
             "postgresql+psycopg2://", "postgresql+asyncpg://", 1

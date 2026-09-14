@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: skillmatchr-backend
+    env: python
+    region: ohio
+    plan: free
+    buildCommand: "pip install -r backend/requirements.txt && alembic upgrade head"
+    startCommand: "uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: MOCK_HRMS_ENABLED
+        value: "True"
+      - key: MOCK_GMAIL_ENABLED
+        value: "True"
